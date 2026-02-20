@@ -12,7 +12,7 @@ Repository for a group budgeting web-application for Spring 2026 capstone.
     
 3. pip install fastapi uvicorn sqlalchemy pydantic-settings python-multipart
 
-To run use: uvicorn app.main:app --reload
+To run in backend directory: uvicorn app.main:app --reload
 
 # To set up frontend
 1. cd frontend
@@ -21,7 +21,7 @@ To run use: uvicorn app.main:app --reload
    
 5. npm install axios
 
-To run use: npm run dev
+To run in frontend directory: npm run dev
 
 # Links
 Frontend
