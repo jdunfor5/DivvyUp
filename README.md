@@ -1,6 +1,11 @@
 # DivvyUp README
 Repository for a group budgeting web-application for Spring 2026 capstone.
 
+# Render Deployments
+Frontend: https://divvyup-static-site.onrender.com
+
+Backend: https://divvyup-api-awun.onrender.com/
+
 # Before doing anything ever
      git pull
 
@@ -17,9 +22,9 @@ To run in backend directory: uvicorn app.main:app --reload
 # To set up frontend
 1. cd frontend
    
-3. npm install
+2. npm install
    
-5. npm install axios
+3. npm install axios
 
 To run in frontend directory: npm run dev
 
