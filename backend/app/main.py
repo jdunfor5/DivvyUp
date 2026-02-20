@@ -1,8 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.api import groups, expenses
 
-app = FastAPI(title="Budget App API")
+# Initialize FastAPI app
+app = FastAPI(
+    title="DivvyUp API",
+    description="API for managing shared expenses among friends",
+    version="1.0.0"
+)
 
+# Configure CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://localhost:3000"],
@@ -11,10 +18,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Root endpoint
 @app.get("/")
 def root():
     return {"message": "DivvyUp API is running!"}
 
-@app.get("/api/health")
-def health():
+# Health check
+@app.get("/health")
+def health_check():
     return {"status": "healthy"}
+
+# Include routers from api folder
+app.include_router(groups.router, prefix="/api/groups", tags=["Groups"])
+app.include_router(expenses.router, prefix="/api/expenses", tags=["Expenses"])
+app.include_router(expenses.router, prefix="/api/users", tags=["Users"])
