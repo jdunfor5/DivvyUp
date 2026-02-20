@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import groups, expenses
+from app.api.routers import groups, expenses, users
 
 # Initialize FastAPI app
 app = FastAPI(
