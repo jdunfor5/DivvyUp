@@ -30,3 +30,10 @@ Frontend
 Backend
 * http://127.0.0.1:8000
 * http://127.0.0.1:8000/docs
+
+PostgreSQL
+* https://www.postgresql.org/download/windows/
+* https://www.youtube.com/watch?v=GpqJzWCcQXY
+
+Node.js
+* https://nodejs.org/en/download
