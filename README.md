@@ -38,7 +38,8 @@ Backend
 
 PostgreSQL
 * https://www.postgresql.org/download/windows/
-* https://www.youtube.com/watch?v=GpqJzWCcQXY
+* Set Up: https://www.youtube.com/watch?v=GpqJzWCcQXY
+* Forgotten Password: https://www.youtube.com/watch?v=CHYjDuaYA4M
 
 Node.js
 * https://nodejs.org/en/download
