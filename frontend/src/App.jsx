@@ -1,34 +1,52 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import Dashboard from './pages/Dashboard'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [activePage, setActivePage] = useState('dashboard')
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          DivvyUp Skeleton Homepage
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <div className="app">
+      <nav className="sidebar">
+        <div className="sidebar-logo">
+          <span className="logo-icon">💰</span>
+          <span className="logo-text">DivvyUp</span>
+        </div>
+        <ul className="nav-links">
+          <li
+            className={activePage === 'dashboard' ? 'active' : ''}
+            onClick={() => setActivePage('dashboard')}
+          >
+            <span className="nav-icon">🏠</span> Dashboard
+          </li>
+          <li
+            className={activePage === 'transactions' ? 'active' : ''}
+            onClick={() => setActivePage('transactions')}
+          >
+            <span className="nav-icon">💳</span> Transactions
+          </li>
+          <li
+            className={activePage === 'budget' ? 'active' : ''}
+            onClick={() => setActivePage('budget')}
+          >
+            <span className="nav-icon">📊</span> Budget
+          </li>
+          <li
+            className={activePage === 'group' ? 'active' : ''}
+            onClick={() => setActivePage('group')}
+          >
+            <span className="nav-icon">👥</span> Group
+          </li>
+        </ul>
+      </nav>
+
+      <main className="main-content">
+        {activePage === 'dashboard' && <Dashboard />}
+        {activePage === 'transactions' && <div className="page-placeholder"><h2>Transactions — coming soon</h2></div>}
+        {activePage === 'budget' && <div className="page-placeholder"><h2>Budget — coming soon</h2></div>}
+        {activePage === 'group' && <div className="page-placeholder"><h2>Group — coming soon</h2></div>}
+      </main>
+    </div>
   )
 }
 

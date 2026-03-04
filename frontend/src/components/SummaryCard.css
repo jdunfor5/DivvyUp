@@ -1,0 +1,39 @@
+.summary-card {
+  background: var(--white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.summary-card-icon {
+  font-size: 28px;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent-light);
+}
+
+.summary-card--income .summary-card-icon { background: #dcfce7; }
+.summary-card--expense .summary-card-icon { background: #fee2e2; }
+.summary-card--owed .summary-card-icon { background: #fef3c7; }
+
+.summary-card-title {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.summary-card-amount {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
