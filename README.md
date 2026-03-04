@@ -1,32 +1,68 @@
 # DivvyUp README
 Repository for a group budgeting web-application for Spring 2026 capstone.
 
-# Render Deployments
+## Render Deployments
 Frontend: https://divvyup-static-site.onrender.com
 
 Backend: https://divvyup-api-awun.onrender.com/
 
-# Before doing anything ever
-     git pull
+## Backend
 
-# To set up backend
-1. cd backend
-    
-2. (If in a bash terminal) source venv/Scripts/activate
-   * You will probably have to do this step every time you re-open your editor
-    
-3. pip install fastapi uvicorn sqlalchemy pydantic-settings python-multipart
+### First-Time Setup
+1. `cd backend`
+3. `python -m venv venv` to create the virtual environment
+4. `source venv/Scripts/activate`
+5. `pip install -r requirements.txt`
 
-To run in backend directory: uvicorn app.main:app --reload
+**Setting Up Database** 
+1. `psql -U postgres`
+2. `CREATE USER divvyup_user WITH PASSWORD 'yourpassword';
+CREATE DATABASE divvyup OWNER divvyup_user;
+GRANT ALL PRIVILEGES ON DATABASE divvyup TO divvyup_user;
+\q`
+3. `copy .env.example .env` (make sure to update .env placeholders)
 
-# To set up frontend
-1. cd frontend
-   
-2. npm install
-   
-3. npm install axios
+### General Working
+1. `cd backend`
+2. `source venv/Scripts/activate` (required every time you reopen your editor)
+3. `pip install -r requirements.txt` (if requirements.txt has been updated)
+4. Run the server: `uvicorn app.main:app --reload`
 
-To run in frontend directory: npm run dev
+> ⚠️ Whenever you install a new package, run `pip freeze > requirements.txt` to keep dependencies up to date.
+### Backend Commands
+#### Dependencies
+* `pip install -r requirements.txt` (install all dependencies)
+* `pip install <package-name>` (install a package)
+* `pip freeze > requirements.txt` (update requirements.txt with new packages)
+
+#### Database
+* `psql -U postgres` (opens PostgreSQL in terminal as superuser)
+* `psql -U divvyup_user -d divvyup` (opens PostgreSQL in terminal as app user)
+
+These next ones will be used to reset the database
+* `DROP DATABASE divvyup;` 
+* `CREATE DATABASE divvyup OWNER divvyup_user;`
+
+#### Running Server
+* `uvicorn app.main:app --reload`
+
+#### Testing
+* `pytest` (run all tests)
+* `pytest tests/test_user.py` (run specific test file)
+* `pytest -v` (verbose output)
+     
+## Frontend
+
+### First-Time Setup
+1. `cd frontend`
+2. `npm install`
+3. `npm install axios`
+
+### General Working
+1. `cd frontend`
+2. `npm run dev`
+
+> ⚠️ Whenever you install a new package, run `npm install <package-name>` and commit the updated `package.json` and `package-lock.json` to keep dependencies up to date.
 
 # Links
 Frontend
