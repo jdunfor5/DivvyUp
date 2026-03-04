@@ -1,35 +1,30 @@
-import os
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from app.api.routers import groups, expenses, users
+from contextlib import asynccontextmanager
 
-# Initialize FastAPI app
-app = FastAPI(
-    title="DivvyUp API",
-    description="API for managing shared expenses among friends",
-    version="1.0.0"
-)
+from app.dependencies.database import check_db_connection, init_db
 
-# Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:5173").split(","),
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Import all models so SQLModel sees them before create_all runs
+import app.models.user       
+import app.models.group      
+import app.models.expense
 
-# Root endpoint
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Runs once on startup
+    await check_db_connection()
+    await init_db()
+    yield
+    # Runs on shutdown (add cleanup here if needed)
+
+
+app = FastAPI(title="DivvyUp API", lifespan=lifespan)
+
+
 @app.get("/")
 def root():
     return {"message": "DivvyUp API is running!"}
 
-# Health check
 @app.get("/health")
-def health_check():
-    return {"status": "healthy"}
-
-# Include routers from api folder
-app.include_router(groups.router, prefix="/api/groups", tags=["Groups"])
-app.include_router(expenses.router, prefix="/api/expenses", tags=["Expenses"])
-app.include_router(expenses.router, prefix="/api/users", tags=["Users"])
+async def health():
+    return {"status": "ok"}
