@@ -38,6 +38,33 @@ footer {
   bottom: 0;
   width: 100%;
 }
+
+header.hero {
+  background-image: url('/frontend/src/assets/header_money.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-overlay {
+  background-color: rgba(0, 0, 0, 0.45);
+  padding: 2rem 3rem;
+  border-radius: 8px;
+  text-align: center;
+  color: white;
+}
+
+.hero-overlay h1 {
+  margin: 0 0 0.5rem;
+}
+
+.hero-overlay p {
+  margin: 0;
+}
 #root {
   /* keep React app area hidden until loaded */
 }
