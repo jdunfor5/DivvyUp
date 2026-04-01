@@ -1,5 +1,7 @@
 # DivvyUp README
 Repository for a group budgeting web-application for Spring 2026 capstone.
+Test User: user@example.com
+           password
 
 ## Render Deployments
 Frontend: https://divvyup-static-site.onrender.com
