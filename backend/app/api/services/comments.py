@@ -3,22 +3,30 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
+from ...models.user import UserRead
+from ...models.expense import Expense
 from ...models.comment import Comment, CommentCreate, CommentRead
 
-# TODO:
-# The user_id expects a UUID to the logged in user.
-# The question remains, how do we obtain this UUID?
-# It has been set to None momentarily.
-#
-# POST: Create comment endpoint
-async def create(db: AsyncSession, expense_uuid: UUID, request: CommentCreate):
-    new_comment = Comment(
-        expense_id      = expense_uuid,
-        user_id         = None,
-        body            = request.body
-    )
+from .helpers import is_user_a_group_member
 
+async def create_comment(db: AsyncSession, current_user: UserRead, expense_uuid: UUID, group_uuid: UUID, request: CommentCreate):
     try:
+        if not is_user_a_group_member(db, current_user.id, group_uuid):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Current user does not have access to the requested group.")
+        
+        statement = select(Expense).where(Expense.id == expense_uuid, Expense.group_id == group_uuid)
+        result = await db.execute(statement)
+        expense = result.scalar_one_or_none()
+
+        if not expense:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{expense_uuid} is an invalid expense identifier. That is, entity does not exist in the \"expenses\" table. Furthermore, {group_uuid} may be an invalid group identifier. That is, entity does not exist in the \"groups\" table.")
+
+        new_comment = Comment(
+            expense_id      = expense.id,
+            user_id         = current_user.id,
+            body            = request.body
+        )
+        
         db.add(new_comment)
         await db.commit()
         await db.refresh(new_comment)
@@ -26,40 +34,39 @@ async def create(db: AsyncSession, expense_uuid: UUID, request: CommentCreate):
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
 
-    return {"Comment created successfully"}
+    return {f"{new_comment.id} has been added into the \"comments\" table."}
 
-# TODO:
-# Security-wise, ensure that user_id can view the requested comment.
-# That is, perform a check to determine whether user_id resides in a valid group.
-#
-# GET: Read comment endpoint
-async def read(db: AsyncSession, comment_uuid: UUID):
+async def read_comment(db: AsyncSession, current_user: UserRead, comment_uuid: UUID, expense_uuid: UUID, group_uuid: UUID):
     try:
-        statement = select(Comment).where(Comment.id == comment_uuid)
+        if not is_user_a_group_member(db, current_user.id, group_uuid):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Current user does not have access to the requested group.")
+
+        statement = select(Comment).where(Comment.id == comment_uuid, Comment.expense_id == expense_uuid)
         result = await db.execute(statement)
         comment = result.scalar_one_or_none()
         
         if not comment:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{comment_uuid} is an invalid comment identifier. That is, entity does not exist in the \"comments\" table.")
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
     
     return comment
 
-# TODO:
-# Security-wise, ensure that user_id can delete the requested comment.
-# That is, only the user that created the original comment or the admin of the group.
-# The user_id must reside in an appropriate group of where the comment lives.
-#
-# DELETE: Delete comment endpoint
-async def delete(db: AsyncSession, comment_uuid: UUID):
+# NOTE:
+# Admins do not have option to delete.
+# Believe there is a more efficient way of deleting.
+async def delete_comment(db: AsyncSession, current_user: UserRead, comment_uuid: UUID, expense_uuid: UUID, group_uuid: UUID):
     try:
-        statement = select(Comment).where(Comment.id == comment_uuid)
-        comment = await db.scalar(statement=statement)
+        if not is_user_a_group_member(db, current_user.id, group_uuid):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Current user does not have access to the requested group.")
+
+        statement = select(Comment).where(Comment.id == comment_uuid, Comment.expense_id == expense_uuid, Comment.user_id == current_user.id)
+        result = await db.scalar(statement)
+        comment = result.scalar_one_or_none()
 
         if not comment:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comment not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{comment_uuid} is an invalid comment identifier. That is, entity does not exist in the \"comments\" table.")
         
         await db.delete(comment)
         await db.commit()
@@ -67,4 +74,4 @@ async def delete(db: AsyncSession, comment_uuid: UUID):
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
     
-    return {"Comment deleted successfully"}
+    return None

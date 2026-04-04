@@ -2,6 +2,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from ...dependencies.database import get_session
+from ...dependencies.security import get_current_user
+from ...models.user import UserRead
 from ...models.comment import CommentCreate, CommentRead
 from ..services import comments as service
 
@@ -10,17 +12,14 @@ router = APIRouter(
     prefix="/groups/{group_uuid}/expenses/{expense_uuid}/comments"
 )
 
-# POST: Create comment endpoint
 @router.post("/")
-async def create(request: UserCreate, db: AsyncSession = Depends(get_session)): 
-    return await service.create(db=db, request=request)
+async def create_comment(request: CommentCreate, group_uuid: UUID, expense_uuid: UUID, current_user: UserRead = Depends(get_current_user), db: AsyncSession = Depends(get_session)): 
+    return await service.create_comment(db, current_user, expense_uuid, group_uuid, request)
 
-# GET: Read comment endpoint
 @router.get("/{comment_uuid}", response_model=CommentRead)
-async def read(user_uuid: UUID, db: AsyncSession = Depends(get_session)):
-    return await service.read(db=db, user_uuid=user_uuid)
+async def read_comment(group_uuid: UUID, expense_uuid: UUID, comment_uuid: UUID, current_user: UserRead = Depends(get_current_user), db: AsyncSession = Depends(get_session)):
+    return await service.read_comment(db, current_user, comment_uuid, expense_uuid, group_uuid)
 
-# DELETE: Delete comment endpoint
 @router.delete("/{comment_uuid}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete(user_uuid: UUID, db: AsyncSession = Depends(get_session)):
-    return await service.delete(db=db, user_uuid=user_uuid)
+async def delete_comment(group_uuid: UUID, expense_uuid: UUID, comment_uuid: UUID, current_user: UserRead = Depends(get_current_user), db: AsyncSession = Depends(get_session)):
+    return await service.delete_comment(db, current_user, comment_uuid, expense_uuid, group_uuid)

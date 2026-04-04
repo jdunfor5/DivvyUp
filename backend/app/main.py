@@ -8,7 +8,7 @@ import app.models.user
 import app.models.group      
 import app.models.expense
 
-# Import API loader
+# Import all routers
 from app.api.routers.loader import load_routers
 
 @asynccontextmanager
@@ -20,7 +20,6 @@ async def lifespan(app: FastAPI):
     # Runs on shutdown (add cleanup here if needed)
 
 app = FastAPI(title="DivvyUp API", lifespan=lifespan)
-
 load_routers(app)
 
 @app.get("/")
