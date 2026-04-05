@@ -1,0 +1,27 @@
+from uuid import UUID
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from ...dependencies.database import get_session
+from ...models.notification import NotificationRead
+from ..services import notifications as service
+
+router = APIRouter(
+    tags=["notifications"],
+    prefix="/users/{user_uuid}/notifications"
+)
+
+@router.get("/", response_model=list[NotificationRead])
+async def read_current_user_notifications(user_uuid: UUID, db: AsyncSession = Depends(get_session)):
+    return await service.read_current_user_notifications(db, user_uuid)
+
+@router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_current_user_notifications(user_uuid: UUID, db: AsyncSession = Depends(get_session)):
+    return await service.delete_current_user_notifications(db, user_uuid)
+
+@router.get("/{notification_uuid}", response_model=NotificationRead)
+async def read_current_user_notification(notification_uuid: UUID, user_uuid: UUID, db: AsyncSession = Depends(get_session)):
+    return await service.read_current_user_notification(db, user_uuid, notification_uuid)
+
+@router.delete("/{notification_uuid}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_current_user_notification(notification_uuid: UUID, user_uuid: UUID, db: AsyncSession = Depends(get_session)):
+    return await service.delete_current_user_notification(db, user_uuid, notification_uuid)
