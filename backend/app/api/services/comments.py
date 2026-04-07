@@ -36,6 +36,20 @@ async def create_comment(db: AsyncSession, current_user: UserRead, expense_uuid:
 
     return {"message": f"{new_comment.id} has been added into the \"comments\" table."}
 
+async def read_comments(db: AsyncSession, current_user: UserRead, expense_uuid: UUID, group_uuid: UUID):
+    try:
+        if not await is_user_a_group_member(db, current_user.id, group_uuid):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Current user does not have access to the requested group.")
+
+        statement = select(Comment).where(Comment.expense_id == expense_uuid)
+        result = await db.execute(statement)
+        comments = result.scalars().all()
+    except SQLAlchemyError as e:
+        error = str(e.__dict__["orig"])
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+
+    return comments
+
 async def read_comment(db: AsyncSession, current_user: UserRead, comment_uuid: UUID, expense_uuid: UUID, group_uuid: UUID):
     try:
         if not await is_user_a_group_member(db, current_user.id, group_uuid):

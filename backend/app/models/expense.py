@@ -49,14 +49,12 @@ class ExpenseSplit(Base):
 # ── Pydantic Schemas ──────────────────────────────────────────
 
 class ExpenseCreate(BaseModel):
-    group_id: uuid.UUID
-    paid_by: uuid.UUID
     description: str
     amount: Decimal
     currency: str = "USD"
     base_amount: Decimal
     exchange_rate: Decimal = Decimal("1")
-    category_id: Optional[int] = None
+    category_id: int = 1
     split_type: SplitType = SplitType.equal
     expense_date: date
     notes: Optional[str] = None

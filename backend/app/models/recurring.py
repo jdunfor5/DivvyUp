@@ -53,18 +53,28 @@ class RecurringExpense(Base):
 # ── Pydantic Schemas ──────────────────────────────────────────
 
 class RecurringExpenseCreate(BaseModel):
-    group_id: uuid.UUID
     description: str
     amount: Decimal
     currency: str = "USD"
     base_amount: Decimal
     exchange_rate: Decimal = Decimal("1")
-    category_id: Optional[int] = None
+    category_id: int = 1
     split_type: SplitType = SplitType.equal
     interval: RecurrenceInterval
     start_date: date
     end_date: Optional[date] = None
-    next_due_date: date
+
+
+class RecurringExpenseUpdate(BaseModel):
+    description: Optional[str] = None
+    amount: Optional[Decimal] = None
+    currency: Optional[str] = None
+    base_amount: Optional[Decimal] = None
+    exchange_rate: Optional[Decimal] = None
+    category_id: Optional[int] = None
+    split_type: Optional[SplitType] = None
+    end_date: Optional[date] = None
+    is_active: Optional[bool] = None
 
 
 class RecurringExpenseRead(BaseModel):

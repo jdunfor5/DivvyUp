@@ -1,101 +1,179 @@
 from uuid import UUID
+from decimal import Decimal, ROUND_DOWN
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, delete as sa_delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
-from ...models.expense import Expense, ExpenseCreate, ExpenseUpdate
+from ...models.expense import Expense, ExpenseCreate, ExpenseUpdate, ExpenseSplit
+from ...models.group import GroupMember, GroupMemberRole
+from ...models.user import UserRead
 
-# TODO:
-# 
-# POST: Create expense endpoint (with participants)
-async def create(db: AsyncSession, request: ExpenseCreate):
-    new_expense = Expense(
-        group_id        = request.group_id,
-        paid_by         = request.paid_by,
-        description     = request.description,
-        amount          = request.amount,
-        currency        = request.currency,
-        base_amount     = request.base_amount,
-        exchange_rate   = request.exchange_rate,
-        category_id     = request.category_id,
-        split_type      = request.split_type,
-        expense_date    = request.expense_date,
-        notes           = request.notes
-    )
 
+async def create(db: AsyncSession, current_user: UserRead, group_uuid: UUID, request: ExpenseCreate):
     try:
+        member_result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid, GroupMember.user_id == current_user.id))
+        if not member_result.scalar_one_or_none():
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not a member of this group.")
+
+        new_expense = Expense(
+            group_id        = group_uuid,
+            paid_by         = current_user.id,
+            description     = request.description,
+            amount          = request.amount,
+            currency        = request.currency,
+            base_amount     = request.base_amount,
+            exchange_rate   = request.exchange_rate,
+            category_id     = request.category_id,
+            split_type      = request.split_type,
+            expense_date    = request.expense_date,
+            notes           = request.notes,
+            created_by      = current_user.id
+        )
+
         db.add(new_expense)
         await db.commit()
         await db.refresh(new_expense)
+
+        result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid))
+        members = result.scalars().all()
+
+        if not members:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No members found in group.")
+
+        db.add_all(_build_splits(new_expense.id, members, request.base_amount, current_user.id))
+        await db.commit()
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    
-    return {"Expense created successfully"}
 
-# TODO:
-# 
-# GET: Read expenses for group endpoint (i understand this as read all)
-async def read_all(db: AsyncSession, group_uuid: UUID):
+    return new_expense
+
+
+async def read_all(db: AsyncSession, current_user: UserRead, group_uuid: UUID):
     try:
-        statement = select(Expense).where(Expense.group_id == group_uuid)
+        member_result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid, GroupMember.user_id == current_user.id))
+        if not member_result.scalar_one_or_none():
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not a member of this group.")
+
+        statement = select(Expense).where(Expense.group_id == group_uuid, Expense.is_deleted == False)
         result = await db.execute(statement)
         expenses = result.scalars().all()
-
-        if not expenses:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Expenses for {group_uuid} not found")
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    
+
     return expenses
 
-# TODO:
-# 
-# PATCH: Update expense endpoint
-async def update(db: AsyncSession, expense_uuid: UUID, request: ExpenseUpdate):
+
+async def read(db: AsyncSession, current_user: UserRead, group_uuid: UUID, expense_uuid: UUID):
     try:
-        statement = select(Expense).where(Expense.id == expense_uuid)
+        member_result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid, GroupMember.user_id == current_user.id))
+        if not member_result.scalar_one_or_none():
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not a member of this group.")
+
+        expense = await db.scalar(select(Expense).where(Expense.id == expense_uuid, Expense.group_id == group_uuid, Expense.is_deleted == False))
+        if not expense:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{expense_uuid} is an invalid expense identifier.")
+    except SQLAlchemyError as e:
+        error = str(e.__dict__["orig"])
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+
+    return expense
+
+
+async def read_splits(db: AsyncSession, current_user: UserRead, group_uuid: UUID, expense_uuid: UUID):
+    try:
+        member_result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid, GroupMember.user_id == current_user.id))
+        if not member_result.scalar_one_or_none():
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not a member of this group.")
+
+        expense = await db.scalar(select(Expense).where(Expense.id == expense_uuid, Expense.group_id == group_uuid))
+        if not expense:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{expense_uuid} is an invalid expense identifier.")
+
+        result = await db.execute(select(ExpenseSplit).where(ExpenseSplit.expense_id == expense_uuid))
+        splits = result.scalars().all()
+    except SQLAlchemyError as e:
+        error = str(e.__dict__["orig"])
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+
+    return splits
+
+
+async def update(db: AsyncSession, current_user: UserRead, group_uuid: UUID, expense_uuid: UUID, request: ExpenseUpdate):
+    try:
+        statement = select(Expense).where(Expense.id == expense_uuid, Expense.group_id == group_uuid)
         result = await db.execute(statement)
         expense = result.scalar_one_or_none()
 
         if not expense:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{expense_uuid} is an invalid expense identifier.")
 
+        member_result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid, GroupMember.user_id == current_user.id))
+        member = member_result.scalar_one_or_none()
 
-        update_expense = request.model_dump(exclude_unset=True)
+        is_creator = expense.created_by == current_user.id
+        is_admin = member and member.role == GroupMemberRole.admin
+        if not is_creator and not is_admin:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the expense creator or a group admin can update this expense.")
 
-        for field, value in update_expense.items():
+        patch = request.model_dump(exclude_unset=True)
+        for field, value in patch.items():
             setattr(expense, field, value)
+
+        if "base_amount" in patch:
+            await db.execute(sa_delete(ExpenseSplit).where(ExpenseSplit.expense_id == expense_uuid))
+            members_result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid))
+            members = members_result.scalars().all()
+            db.add_all(_build_splits(expense.id, members, expense.base_amount, expense.paid_by))
 
         await db.commit()
         await db.refresh(expense)
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    
+
     return expense
 
-# TODO:
-# 
-# DELETE: Delete expense endpoint
-async def delete(db: AsyncSession, expense_uuid: UUID):
+
+async def delete(db: AsyncSession, current_user: UserRead, group_uuid: UUID, expense_uuid: UUID):
     try:
-        statement = select(Expense).where(Expense.id == expense_uuid)
+        statement = select(Expense).where(Expense.id == expense_uuid, Expense.group_id == group_uuid)
         result = await db.execute(statement)
         expense = result.scalar_one_or_none()
 
         if not expense:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found")
-        
-        await db.delete(expense)
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{expense_uuid} is an invalid expense identifier.")
+
+        member_result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid, GroupMember.user_id == current_user.id))
+        member = member_result.scalar_one_or_none()
+
+        is_creator = expense.created_by == current_user.id
+        is_admin = member and member.role == GroupMemberRole.admin
+        if not is_creator and not is_admin:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the expense creator or a group admin can delete this expense.")
+
+        expense.is_deleted = True
         await db.commit()
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    
-    return {"Expense deleted successfully"}
 
-# TODO:
-# 
-# UNKNOWN: Handle different split types (equal, custom amounts, percentages)
+    return None
+
+
+def _build_splits(expense_id: UUID, members: list, base_amount: Decimal, payer_id: UUID) -> list:
+    num_members = len(members)
+    base = Decimal(str(base_amount)).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+    share = (base / num_members).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+    remainder = base - (share * num_members)
+
+    splits = []
+    for member in members:
+        member_share = share + remainder if member.user_id == payer_id else share
+        splits.append(ExpenseSplit(
+            expense_id   = expense_id,
+            user_id      = member.user_id,
+            share_amount = member_share,
+        ))
+    return splits

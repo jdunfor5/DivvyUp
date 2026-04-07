@@ -22,6 +22,19 @@ AsyncSessionLocal = sessionmaker(
 )
 
 
+SEED_CATEGORIES = [
+    {"name": "Misc",            "icon": "📦"},
+    {"name": "Food & Drink",    "icon": "🍔"},
+    {"name": "Transport",       "icon": "🚗"},
+    {"name": "Housing",         "icon": "🏠"},
+    {"name": "Entertainment",   "icon": "🎬"},
+    {"name": "Shopping",        "icon": "🛍️"},
+    {"name": "Travel",          "icon": "✈️"},
+    {"name": "Utilities",       "icon": "💡"},
+    {"name": "Health",          "icon": "💊"},
+    {"name": "Other",           "icon": "🗂️"},
+]
+
 async def init_db():
     """Create all tables on startup"""
     import app.models
@@ -40,6 +53,20 @@ async def init_db():
             else:
                 print("✅ All tables already exist")
         await conn.run_sync(log_and_create)
+
+    await seed_categories()
+
+async def seed_categories():
+    from app.models.category import Category
+    from sqlalchemy import select
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(Category))
+        if result.scalars().first() is not None:
+            print("✅ Categories already seeded")
+            return
+        session.add_all([Category(**c) for c in SEED_CATEGORIES])
+        await session.commit()
+        print(f"✅ Seeded {len(SEED_CATEGORIES)} categories")
 
 
 async def check_db_connection():
