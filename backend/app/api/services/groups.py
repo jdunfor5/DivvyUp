@@ -1,10 +1,14 @@
 from uuid import UUID
+from decimal import Decimal
+from collections import defaultdict
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from ...models.user import UserRead
 from ...models.group import Group, GroupCreate, GroupUpdate, GroupMember, GroupMemberRole
+from ...models.expense import Expense, ExpenseSplit
+from ...models.settlement import Settlement, PaymentStatus
 
 # TODO: Testing
 async def create_group(db: AsyncSession, current_user: UserRead, request: GroupCreate):
@@ -32,11 +36,33 @@ async def create_group(db: AsyncSession, current_user: UserRead, request: GroupC
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    
-    return {f"{new_group.id} has been added into the \"groups\" table.\n{new_group_member.id} has been added into the \"group_members\" table."}
+
+    return new_group
 
 # TODO: Testing
-async def create_group_member(db: AsyncSession, current_user: UserRead, group_uuid: UUID):    
+async def join_group_by_invite(db: AsyncSession, current_user: UserRead, invite_code: str):
+    try:
+        group_result = await db.execute(select(Group).where(Group.invite_code == invite_code))
+        group = group_result.scalar_one_or_none()
+        if not group:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid invite code.")
+
+        existing = await db.execute(select(GroupMember).where(GroupMember.group_id == group.id, GroupMember.user_id == current_user.id))
+        if existing.scalar_one_or_none():
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You are already a member of this group.")
+
+        new_member = GroupMember(group_id=group.id, user_id=current_user.id, role=GroupMemberRole.member)
+        db.add(new_member)
+        await db.commit()
+        await db.refresh(group)
+    except SQLAlchemyError as e:
+        error = str(e.__dict__["orig"])
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+
+    return group
+
+
+async def create_group_member(db: AsyncSession, current_user: UserRead, group_uuid: UUID):
     new_group_member = GroupMember(
         group_id        = group_uuid,
         user_id         = current_user.id,
@@ -50,8 +76,8 @@ async def create_group_member(db: AsyncSession, current_user: UserRead, group_uu
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    
-    return {f"{new_group_member.id} has been added into the \"group_members\" table."}
+
+    return {"message": f"({new_group_member.group_id}, {new_group_member.user_id}) has been added into the \"group_members\" table."}
 
 # TODO: Testing and preconditions
 async def read_group(db: AsyncSession, current_user: UserRead, group_uuid: UUID):
@@ -61,11 +87,15 @@ async def read_group(db: AsyncSession, current_user: UserRead, group_uuid: UUID)
         group = result.scalar_one_or_none()
 
         if not group:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="f{group_uuid} is an invalid group identifier. That is, entity does not exist in the \"groups\" table.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{group_uuid} is an invalid group identifier. That is, entity does not exist in the \"groups\" table.")
+
+        member_result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid, GroupMember.user_id == current_user.id))
+        if not member_result.scalar_one_or_none():
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not a member of this group.")
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    
+
     return group
 
 # This service function is used to read a group member from a group.
@@ -89,6 +119,22 @@ async def read_group_member(db: AsyncSession, current_user: UserRead, group_uuid
     
     return group_member
 
+# Read all members of a group
+async def read_group_members(db: AsyncSession, current_user: UserRead, group_uuid: UUID):
+    try:
+        member_result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid, GroupMember.user_id == current_user.id))
+        if not member_result.scalar_one_or_none():
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not a member of this group.")
+
+        statement = select(GroupMember).where(GroupMember.group_id == group_uuid)
+        result = await db.execute(statement)
+        group_members = result.scalars().all()
+    except SQLAlchemyError as e:
+        error = str(e.__dict__["orig"])
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+
+    return group_members
+
 # TODO:
 # backend/dependencies/security.py includes a function: get_current_user
 # backend/dependencies/security.py includes a function: create_access_token
@@ -97,19 +143,18 @@ async def read_group_member(db: AsyncSession, current_user: UserRead, group_uuid
 # That is, this function works so long as the supplied user_uuid has at least 1 group that it belongs to as a group member.
 async def read_current_user_groups(db: AsyncSession, current_user: UserRead):
     try:
-        groups = (
-            session.query(Group)
+        statement = (
+            select(Group)
             .join(GroupMember, Group.id == GroupMember.group_id)
-            .filter(GroupMember.user_id == current_user.id)
-            .all()
+            .where(GroupMember.user_id == current_user.id)
         )
+        result = await db.execute(statement)
+        groups = result.scalars().all()
 
-        if not groups:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{user_uuid} is an invalid user identifier. That is, entity does not exist in the\"group_members\" table. Furthermore, there are no associated groups in the \"groups\" table for the supplied user identifier!")
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    
+
     return groups
 
 # TODO:
@@ -122,16 +167,19 @@ async def read_current_user_groups(db: AsyncSession, current_user: UserRead):
 # Additionally, this function throws if one attempts to update all fields due to some kind of database character limit.
 async def update_group(db: AsyncSession, current_user: UserRead, group_uuid: UUID, request: GroupUpdate):
     try:
+        member_result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid, GroupMember.user_id == current_user.id))
+        member = member_result.scalar_one_or_none()
+        if not member or member.role != GroupMemberRole.admin:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the group admin can update the group.")
+
         statement = select(Group).where(Group.id == group_uuid)
         result = await db.execute(statement)
         group = result.scalar_one_or_none()
 
         if not group:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="f{group_uuid} is an invalid group identifier. That is, entity does not exist in the \"groups\" table.")
-        
-        update_group = request.model_dump(exclude_unset=True)
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{group_uuid} is an invalid group identifier. That is, entity does not exist in the \"groups\" table.")
 
-        for field, value in update_group.items():
+        for field, value in request.model_dump(exclude_unset=True).items():
             setattr(group, field, value)
 
         await db.commit()
@@ -139,7 +187,7 @@ async def update_group(db: AsyncSession, current_user: UserRead, group_uuid: UUI
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    
+
     return group
 
 # TODO:
@@ -154,19 +202,22 @@ async def update_group(db: AsyncSession, current_user: UserRead, group_uuid: UUI
 # Solution? Change either created_by or admin to someone else in the group.
 async def delete_group(db: AsyncSession, current_user: UserRead, group_uuid: UUID):
     try:
-        statement = select(Group).where(Group.created_by == current_user.id, Group.id == group_uuid)
-        result = await db.execute(statement)
-        group = result.scalar_one_or_none()
-
+        group_result = await db.execute(select(Group).where(Group.id == group_uuid))
+        group = group_result.scalar_one_or_none()
         if not group:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="f{group_uuid} is an invalid group identifier. That is, entity does not exist in the \"groups\" table.")
-        
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{group_uuid} is an invalid group identifier. That is, entity does not exist in the \"groups\" table.")
+
+        member_result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid, GroupMember.user_id == current_user.id))
+        member = member_result.scalar_one_or_none()
+        if not member or member.role != GroupMemberRole.admin:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the group admin can delete the group.")
+
         await db.delete(group)
         await db.commit()
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    
+
     return None
 
 # This service function is used to delete the currently logged in user from a group.
@@ -212,24 +263,96 @@ async def delete_group_member(db: AsyncSession, current_user: UserRead, group_uu
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"{current_user.id} is not a group member of {group_uuid}.")
         
         is_self = current_user.id == user_uuid
-        if not is_self:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You are not authorized to remove yourself.")
-        
+        if is_self:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You cannot remove yourself from the group. Transfer ownership first.")
+
         is_admin = current_group_member.role == GroupMemberRole.admin
         if not is_admin:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You must be an admin of the group to remove someone else.")
-        
+
         statement = select(GroupMember).where(GroupMember.group_id == group_uuid, GroupMember.user_id == user_uuid)
         result = await db.execute(statement)
         targeted_group_member = result.scalar_one_or_none()
 
         if not targeted_group_member:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{user_uuid} is an invalid user identifier. That is, entity does not exist in the\"group_members\" table. Furthermore, {group_uuid} may be an invalid group identifier. That is, entity does not exist in the \"groups\" table.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{user_uuid} is an invalid user identifier. That is, entity does not exist in the \"group_members\" table. Furthermore, {group_uuid} may be an invalid group identifier. That is, entity does not exist in the \"groups\" table.")
 
-        await db.delete(group_member)
+        await db.delete(targeted_group_member)
         await db.commit()
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    
+
     return None
+
+
+async def transfer_group_ownership(db: AsyncSession, current_user: UserRead, group_uuid: UUID, user_uuid: UUID):
+    try:
+        statement = select(GroupMember).where(GroupMember.group_id == group_uuid, GroupMember.user_id == current_user.id)
+        result = await db.execute(statement)
+        current_group_member = result.scalar_one_or_none()
+
+        if not current_group_member:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"{current_user.id} is not a group member of {group_uuid}.")
+
+        if current_group_member.role != GroupMemberRole.admin:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You must be an admin to transfer ownership.")
+
+        if current_user.id == user_uuid:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"You cannot transfer ownership to yourself.")
+
+        statement = select(GroupMember).where(GroupMember.group_id == group_uuid, GroupMember.user_id == user_uuid)
+        result = await db.execute(statement)
+        target_group_member = result.scalar_one_or_none()
+
+        if not target_group_member:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{user_uuid} is not a member of {group_uuid}.")
+
+        current_group_member.role = GroupMemberRole.member
+        target_group_member.role = GroupMemberRole.admin
+        await db.commit()
+    except SQLAlchemyError as e:
+        error = str(e.__dict__["orig"])
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+
+    return {"message": f"Ownership of {group_uuid} has been transferred to {user_uuid}."}
+
+
+async def get_balances(db: AsyncSession, current_user: UserRead, group_uuid: UUID):
+    try:
+        member_result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid, GroupMember.user_id == current_user.id))
+        if not member_result.scalar_one_or_none():
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not a member of this group.")
+
+        members_result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid))
+        members = members_result.scalars().all()
+
+        balances: dict = defaultdict(Decimal)
+        for m in members:
+            balances[m.user_id] = Decimal("0")
+
+        splits_result = await db.execute(
+            select(ExpenseSplit, Expense.paid_by)
+            .join(Expense, ExpenseSplit.expense_id == Expense.id)
+            .where(Expense.group_id == group_uuid, Expense.is_deleted == False)
+        )
+        for split, paid_by in splits_result.all():
+            if split.user_id != paid_by:
+                balances[paid_by] += split.share_amount
+                balances[split.user_id] -= split.share_amount
+
+        settlements_result = await db.execute(
+            select(Settlement).where(
+                Settlement.group_id == group_uuid,
+                Settlement.status == PaymentStatus.completed
+            )
+        )
+        for s in settlements_result.scalars().all():
+            balances[s.payer_id] += s.amount
+            balances[s.payee_id] -= s.amount
+
+    except SQLAlchemyError as e:
+        error = str(e.__dict__["orig"])
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+
+    return [{"user_id": uid, "net_balance": bal} for uid, bal in balances.items()]

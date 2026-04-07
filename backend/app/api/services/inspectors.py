@@ -13,8 +13,6 @@ async def read_all_users(db: AsyncSession):
         result = await db.execute(statement)
         users = result.scalars().all()
         
-        if not users:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No users exist in the database.")
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
@@ -27,8 +25,6 @@ async def read_all_groups(db: AsyncSession):
         result = await db.execute(statement)
         groups = result.scalars().all()
         
-        if not groups:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No groups exist in the database.")
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
@@ -41,8 +37,6 @@ async def read_all_group_members(db: AsyncSession):
         result = await db.execute(statement)
         group_members = result.scalars().all()
         
-        if not group_members:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No group members exist in the database. Thus, no groups should exist in the database.")
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
@@ -66,7 +60,7 @@ async def create_notification(db: AsyncSession, request: Notification):
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
     
-    return {f"{new_notification.id} has been added into the \"notifications\" table."}
+    return {"message": f"{new_notification.id} has been added into the \"notifications\" table."}
 
 async def read_all_notifications(db: AsyncSession):
     try:

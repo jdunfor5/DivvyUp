@@ -11,18 +11,22 @@ router = APIRouter(
     prefix="/users"
 )
 
-@router.post("/")
-async def create_user(request: UserCreate, db: AsyncSession = Depends(get_session)): 
+@router.post("/", response_model=UserRead)
+async def create_user(request: UserCreate, db: AsyncSession = Depends(get_session)):
     return await service.create_user(db, request)
 
+@router.get("/me", response_model=UserRead)
+async def read_current_user(current_user: UserRead = Depends(get_current_user)):
+    return current_user
+
 @router.get("/{user_uuid}", response_model=UserRead)
-async def read_user(user_uuid: UUID, db: AsyncSession = Depends(get_session)):
+async def read_user(user_uuid: UUID, _current_user: UserRead = Depends(get_current_user), db: AsyncSession = Depends(get_session)):
     return await service.read_user(db, user_uuid)
 
-@router.patch("/", response_model=UserUpdate)
+@router.patch("/me", response_model=UserRead)
 async def update_current_user(request: UserUpdate, current_user: UserRead = Depends(get_current_user), db: AsyncSession = Depends(get_session)):
     return await service.update_current_user(db, current_user, request)
 
-@router.delete("/", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_current_user(current_user: UserRead = Depends(get_current_user), db: AsyncSession = Depends(get_session)):
     return await service.delete_current_user(db, current_user)

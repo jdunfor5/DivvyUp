@@ -54,9 +54,6 @@ class SettlementSplit(Base):
 # ── Pydantic Schemas ──────────────────────────────────────────
 
 class SettlementCreate(BaseModel):
-    group_id: uuid.UUID
-    payer_id: uuid.UUID
-    payee_id: uuid.UUID
     amount: Decimal
     currency: str = "USD"
     provider: Optional[PaymentProvider] = None

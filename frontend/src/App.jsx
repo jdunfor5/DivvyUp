@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Dashboard from './pages/Dashboard'
+import Login from './pages/Login'
+import { getToken, getCurrentUser, clearToken } from './api'
 import './App.css'
 
 const mockGroups = [
@@ -15,8 +17,30 @@ const mockFriends = [
 ]
 
 function App() {
+  const [currentUser, setCurrentUser] = useState(null)
+  const [authChecked, setAuthChecked] = useState(false)
   const [groupsOpen, setGroupsOpen] = useState(true)
   const [friendsOpen, setFriendsOpen] = useState(true)
+
+  // On load, restore session from stored token
+  useEffect(() => {
+    if (getToken()) {
+      getCurrentUser()
+        .then(setCurrentUser)
+        .catch(() => clearToken())
+        .finally(() => setAuthChecked(true))
+    } else {
+      setAuthChecked(true)
+    }
+  }, [])
+
+  function handleLogout() {
+    clearToken()
+    setCurrentUser(null)
+  }
+
+  if (!authChecked) return null
+  if (!currentUser) return <Login onLogin={setCurrentUser} />
 
   return (
     <div className="app">
@@ -86,6 +110,12 @@ function App() {
           </button>
           <button className="btn-add btn-add--group">
             <span>+</span> Add Group
+          </button>
+          <div style={{ marginTop: '1rem', fontSize: '0.8rem', color: '#aaa', textAlign: 'center' }}>
+            {currentUser.display_name}
+          </div>
+          <button className="btn-add" onClick={handleLogout} style={{ marginTop: '0.25rem', background: '#fee2e2', color: '#dc2626' }}>
+            Sign out
           </button>
         </div>
       </nav>

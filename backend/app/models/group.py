@@ -2,6 +2,7 @@ import uuid
 import random
 import string
 from datetime import datetime
+from decimal import Decimal
 from typing import Optional
 from enum import Enum
 from sqlalchemy import String, DateTime, Enum as SAEnum, ForeignKey, func
@@ -65,6 +66,10 @@ class GroupRead(BaseModel):
         from_attributes = True
 
 
+class GroupJoin(BaseModel):
+    invite_code: str
+
+
 class GroupUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
@@ -79,3 +84,8 @@ class GroupMemberRead(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class GroupBalance(BaseModel):
+    user_id: uuid.UUID
+    net_balance: Decimal
