@@ -33,7 +33,7 @@ async def create_group(db: AsyncSession, current_user: UserRead, request: GroupC
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
     
-    return {f"{new_group.id} has been added into the \"groups\" table.\n{new_group_member.id} has been added into the \"group_members\" table."}
+    return {"message": f"{new_group.id} has been added into the \"groups\" table.\n({new_group_member.group_id}, {new_group_member.user_id}) has been added into the \"group_members\" table."}
 
 # TODO: Testing
 async def create_group_member(db: AsyncSession, current_user: UserRead, group_uuid: UUID):    
@@ -51,7 +51,7 @@ async def create_group_member(db: AsyncSession, current_user: UserRead, group_uu
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
     
-    return {f"{new_group_member.id} has been added into the \"group_members\" table."}
+    return {"message": f"({new_group_member.group_id}, {new_group_member.user_id}) has been added into the \"group_members\" table."}
 
 # TODO: Testing and preconditions
 async def read_group(db: AsyncSession, current_user: UserRead, group_uuid: UUID):
@@ -61,11 +61,11 @@ async def read_group(db: AsyncSession, current_user: UserRead, group_uuid: UUID)
         group = result.scalar_one_or_none()
 
         if not group:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="f{group_uuid} is an invalid group identifier. That is, entity does not exist in the \"groups\" table.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{group_uuid} is an invalid group identifier. That is, entity does not exist in the \"groups\" table.")
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    
+
     return group
 
 # This service function is used to read a group member from a group.
@@ -97,19 +97,20 @@ async def read_group_member(db: AsyncSession, current_user: UserRead, group_uuid
 # That is, this function works so long as the supplied user_uuid has at least 1 group that it belongs to as a group member.
 async def read_current_user_groups(db: AsyncSession, current_user: UserRead):
     try:
-        groups = (
-            session.query(Group)
+        statement = (
+            select(Group)
             .join(GroupMember, Group.id == GroupMember.group_id)
-            .filter(GroupMember.user_id == current_user.id)
-            .all()
+            .where(GroupMember.user_id == current_user.id)
         )
+        result = await db.execute(statement)
+        groups = result.scalars().all()
 
         if not groups:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{user_uuid} is an invalid user identifier. That is, entity does not exist in the\"group_members\" table. Furthermore, there are no associated groups in the \"groups\" table for the supplied user identifier!")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{current_user.id} is an invalid user identifier. That is, entity does not exist in the \"group_members\" table. Furthermore, there are no associated groups in the \"groups\" table for the supplied user identifier!")
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    
+
     return groups
 
 # TODO:
@@ -127,8 +128,8 @@ async def update_group(db: AsyncSession, current_user: UserRead, group_uuid: UUI
         group = result.scalar_one_or_none()
 
         if not group:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="f{group_uuid} is an invalid group identifier. That is, entity does not exist in the \"groups\" table.")
-        
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{group_uuid} is an invalid group identifier. That is, entity does not exist in the \"groups\" table.")
+
         update_group = request.model_dump(exclude_unset=True)
 
         for field, value in update_group.items():
@@ -159,8 +160,8 @@ async def delete_group(db: AsyncSession, current_user: UserRead, group_uuid: UUI
         group = result.scalar_one_or_none()
 
         if not group:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="f{group_uuid} is an invalid group identifier. That is, entity does not exist in the \"groups\" table.")
-        
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{group_uuid} is an invalid group identifier. That is, entity does not exist in the \"groups\" table.")
+
         await db.delete(group)
         await db.commit()
     except SQLAlchemyError as e:
@@ -212,21 +213,21 @@ async def delete_group_member(db: AsyncSession, current_user: UserRead, group_uu
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"{current_user.id} is not a group member of {group_uuid}.")
         
         is_self = current_user.id == user_uuid
-        if not is_self:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You are not authorized to remove yourself.")
-        
+        if is_self:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You cannot remove yourself from the group. Transfer ownership first.")
+
         is_admin = current_group_member.role == GroupMemberRole.admin
         if not is_admin:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"You must be an admin of the group to remove someone else.")
-        
+
         statement = select(GroupMember).where(GroupMember.group_id == group_uuid, GroupMember.user_id == user_uuid)
         result = await db.execute(statement)
         targeted_group_member = result.scalar_one_or_none()
 
         if not targeted_group_member:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{user_uuid} is an invalid user identifier. That is, entity does not exist in the\"group_members\" table. Furthermore, {group_uuid} may be an invalid group identifier. That is, entity does not exist in the \"groups\" table.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{user_uuid} is an invalid user identifier. That is, entity does not exist in the \"group_members\" table. Furthermore, {group_uuid} may be an invalid group identifier. That is, entity does not exist in the \"groups\" table.")
 
-        await db.delete(group_member)
+        await db.delete(targeted_group_member)
         await db.commit()
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])

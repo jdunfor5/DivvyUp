@@ -23,20 +23,20 @@ async def create_user(db: AsyncSession, request: UserCreate):
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
 
-    return {f"{new_user.id} has been added into the \"users\" table."}
+    return {"message": f"{new_user.id} has been added into the \"users\" table."}
 
 async def read_user(db: AsyncSession, user_uuid: UUID):
     try:
         statement = select(User).where(User.id == user_uuid)
         result = await db.execute(statement)
         user = result.scalar_one_or_none()
-        
+
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="f{user_uuid} is an invalid user identifier. That is, entity does not exist in the \"users\" table.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{user_uuid} is an invalid user identifier. That is, entity does not exist in the \"users\" table.")
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    
+
     return user
 
 # TODO:
@@ -52,8 +52,8 @@ async def update_current_user(db: AsyncSession, current_user: UserRead, request:
         user = result.scalar_one_or_none()
 
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="f{current_user.id} is an invalid user identifier. That is, entity does not exist in the \"users\" table.")
-        
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{current_user.id} is an invalid user identifier. That is, entity does not exist in the \"users\" table.")
+
         update_user = request.model_dump(exclude_unset=True)
 
         for field, value in update_user.items():
@@ -64,7 +64,7 @@ async def update_current_user(db: AsyncSession, current_user: UserRead, request:
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    
+
     return user
 
 # TODO:
@@ -83,12 +83,12 @@ async def delete_current_user(db: AsyncSession, current_user: UserRead):
         user = await db.scalar(statement)
 
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="f{current_user.id} is an invalid user identifier. That is, entity does not exist in the \"users\" table.")
-        
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{current_user.id} is an invalid user identifier. That is, entity does not exist in the \"users\" table.")
+
         await db.delete(user)
         await db.commit()
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    
+
     return None

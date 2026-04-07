@@ -1,6 +1,6 @@
 from uuid import UUID
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from ...models.notification import Notification
@@ -23,13 +23,13 @@ async def read_current_user_notification(db: AsyncSession, user_uuid: UUID, noti
         statement = select(Notification).where(Notification.id == notification_uuid)
         result = await db.execute(statement)
         notification = result.scalar_one_or_none()
-        
+
         if not notification:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{notification_uuid} is an invalid notification identifier. That is, entity does not exist in the \"notifications\" table. Furthermore, {user_uuid} may be an invalid user identifier. That is, entity does not exist in the \"users\" table.")
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    
+
     return notification
 
 # TODO:
@@ -49,7 +49,7 @@ async def read_current_user_notifications(db: AsyncSession, user_uuid: UUID):
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    
+
     return notifications
 
 # TODO:
@@ -68,7 +68,7 @@ async def delete_current_user_notification(db: AsyncSession, user_uuid: UUID, no
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    
+
     return None
 
 # TODO:
@@ -87,5 +87,5 @@ async def delete_current_user_notifications(db: AsyncSession, user_uuid: UUID):
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
-    
+
     return None

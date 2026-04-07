@@ -66,7 +66,7 @@ async def create_notification(db: AsyncSession, request: Notification):
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
     
-    return {f"{new_notification.id} has been added into the \"notifications\" table."}
+    return {"message": f"{new_notification.id} has been added into the \"notifications\" table."}
 
 async def read_all_notifications(db: AsyncSession):
     try:
