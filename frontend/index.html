@@ -5,42 +5,211 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="src/style.css" />
-    <title>DivvyUp Homepage</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+    <title>DivvyUp — Split Expenses, Not Friendships</title>
   </head>
   <body>
+
+    <!-- NAV -->
+    <nav>
+      <a href="#" class="nav-logo">
+        <div class="nav-logo-mark">D</div>
+        <span class="nav-logo-name">DivvyUp</span>
+      </a>
+      <a href="dashboard.html" class="nav-cta">Login / Sign Up</a>
+    </nav>
+
+    <!-- HERO -->
     <header class="hero">
-      <div class="hero-overlay">
-        <h1>Welcome to DivvyUp</h1>
-        <p>DivvyUp helps friends split expenses and settle debts easily.</p>
+      <div class="hero-blob b1"></div>
+      <div class="hero-blob b2"></div>
+      <div class="hero-blob b3"></div>
+
+      <div class="hero-eyebrow">
+        <div class="hero-eyebrow-dot"></div>
+        Free to use &nbsp;·&nbsp; No spreadsheets required
+      </div>
+
+      <h1>Split expenses,<br>not <em>friendships.</em></h1>
+      <p>DivvyUp helps friends track shared costs and settle debts easily — whether it's a road trip, dinner, or rent.</p>
+
+      <div class="hero-actions">
+        <a href="dashboard.html" class="btn-hero-primary">Get started free</a>
+        <a href="#how" class="btn-hero-ghost">See how it works</a>
+      </div>
+
+      <!-- Mini preview card -->
+      <div class="hero-preview">
+        <div class="preview-title">Weekend trip to Asheville</div>
+        <div class="preview-expense">
+          <div class="preview-expense-left">
+            <div class="preview-expense-icon" style="background:rgba(255,255,255,0.1)">🏨</div>
+            <div>
+              <div class="preview-expense-name">Airbnb</div>
+              <div class="preview-expense-sub">Paid by Jordan</div>
+            </div>
+          </div>
+          <div class="preview-expense-amount">$240.00</div>
+        </div>
+        <div class="preview-expense">
+          <div class="preview-expense-left">
+            <div class="preview-expense-icon" style="background:rgba(255,255,255,0.1)">🍽️</div>
+            <div>
+              <div class="preview-expense-name">Dinner</div>
+              <div class="preview-expense-sub">Paid by Alex</div>
+            </div>
+          </div>
+          <div class="preview-expense-amount">$94.50</div>
+        </div>
+        <div class="preview-balance">
+          <span class="preview-balance-label">You owe Jordan</span>
+          <span class="preview-balance-value">$80.00</span>
+        </div>
       </div>
     </header>
+
+    <!-- STATS STRIP -->
+    <div class="stats-strip">
+      <div class="stat-item">
+        <div class="stat-number">$0</div>
+        <div class="stat-desc">Free to use</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">Instant</div>
+        <div class="stat-desc">Balance updates</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number">Any size</div>
+        <div class="stat-desc">Group supported</div>
+      </div>
+    </div>
+
     <main>
-      <section>
-        <h2>What is DivvyUp?</h2>
-        <p>DivvyUp is a simple tool for groups to keep track of who owes who.
-        Whether you're sharing meals, trips, or rent, DivvyUp makes
-        splitting and settling debts painless.</p>
+
+      <!-- WHAT IS DIVVYUP -->
+      <section class="what-is">
+        <div class="what-is-text">
+          <h2>The fairest way to share money with people you like</h2>
+          <p>DivvyUp is a simple tool for groups to track who owes who. Whether you're splitting meals, trips, or monthly rent — DivvyUp keeps everyone on the same page without the awkward conversations.</p>
+        </div>
+        <div class="what-is-visual">
+          <div class="preview-title" style="font-size:11px; font-weight:600; letter-spacing:0.06em; color:#888780; text-transform:uppercase; margin-bottom:10px;">Current balances</div>
+          <div class="mini-ledger-row">
+            <div class="ledger-person">
+              <div class="avatar av-a">JK</div>
+              <span class="ledger-name">Jordan</span>
+            </div>
+            <span class="owed">+$80.00</span>
+          </div>
+          <div class="mini-ledger-row">
+            <div class="ledger-person">
+              <div class="avatar av-b">AL</div>
+              <span class="ledger-name">Alex</span>
+            </div>
+            <span class="owes">−$35.50</span>
+          </div>
+          <div class="mini-ledger-row">
+            <div class="ledger-person">
+              <div class="avatar av-c">MR</div>
+              <span class="ledger-name">Morgan</span>
+            </div>
+            <span class="owes">−$44.50</span>
+          </div>
+          <div class="mini-ledger-row">
+            <div class="ledger-person">
+              <div class="avatar av-d">SL</div>
+              <span class="ledger-name">Sam</span>
+            </div>
+            <span class="settled">Settled ✓</span>
+          </div>
+        </div>
       </section>
-      <section>
-        <h2>How it helps</h2>
-        <ul>
-          <li>Record expenses among friends</li>
-          <li>Automatically calculate balances</li>
-          <li>Settle up with minimal hassle</li>
-        </ul>
+
+      <!-- FEATURES -->
+      <section class="features-section">
+        <div class="section-label">Features</div>
+        <div class="section-title">Everything you need to split fairly</div>
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon fi-green">📋</div>
+            <h3>Record expenses</h3>
+            <p>Log what you paid and who was involved. Split evenly or enter custom amounts per person.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon fi-blue">⚡</div>
+            <h3>Auto-calculate balances</h3>
+            <p>No mental math needed. DivvyUp instantly shows who owes what across the whole group.</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon fi-amber">✓</div>
+            <h3>Settle with minimal hassle</h3>
+            <p>Mark debts as paid in one tap. Keep your group's finances clean and up to date.</p>
+          </div>
+        </div>
       </section>
-    <section>
-      <h2><a href="dashboard.html">Click Here to access dashboard</a></h2>
-      <ul>
-        <li>temporary pathway to be restricted for final release </li>
-        <li>users will have to login or sign up (to be implemented) to get to their dashboard.</li>
-      </ul>
-    </section>
+
+      <!-- HOW IT WORKS -->
+      <section class="how-section" id="how">
+        <div class="section-label">How it works</div>
+        <div class="section-title">Three steps to a clean slate</div>
+        <div class="steps-grid">
+          <div class="step-item">
+            <div class="step-num">1</div>
+            <h4>Add an expense</h4>
+            <p>Enter what you spent, who paid, and who was involved. DivvyUp handles the rest.</p>
+          </div>
+          <div class="step-item">
+            <div class="step-num">2</div>
+            <h4>See live balances</h4>
+            <p>The dashboard updates instantly — always showing exactly who owes whom and how much.</p>
+          </div>
+          <div class="step-item">
+            <div class="step-num">3</div>
+            <h4>Settle up</h4>
+            <p>Pay your friends back through your preferred method, then mark it done. Clean slate.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- USE CASES -->
+      <section class="use-cases-section">
+        <div class="section-label">Use cases</div>
+        <div class="section-title">Perfect for any shared expense</div>
+        <div class="use-cases-grid">
+          <div class="use-case-chip"><span>✈️</span><span>Group trips</span></div>
+          <div class="use-case-chip"><span>🍕</span><span>Shared meals</span></div>
+          <div class="use-case-chip"><span>🏠</span><span>Rent &amp; utilities</span></div>
+          <div class="use-case-chip"><span>🎉</span><span>Events &amp; parties</span></div>
+          <div class="use-case-chip"><span>🛒</span><span>Grocery runs</span></div>
+          <div class="use-case-chip"><span>👫</span><span>Roommates</span></div>
+        </div>
+      </section>
+
+      <!-- CTA -->
+      <section class="cta-section">
+        <h2>Ready to divvy up?</h2>
+        <p>Create an account to access your dashboard and start tracking expenses with your group.</p>
+        <a href="dashboard.html" class="btn-cta">Go here to login or sign up.</a>
+        <!-- <div>
+          <span class="dev-badge">⚠ Dev note: dashboard link is currently unrestricted — login &amp; signup to be implemented before release</span>
+        </div> -->
+      </section>
+
     </main>
+
+    <!-- FOOTER -->
     <footer>
-      <p>&copy; 2026 DivvyUp</p>
+      <a href="#" class="footer-logo">
+        <div class="footer-logo-mark">D</div>
+        <span class="footer-logo-name">DivvyUp</span>
+      </a>
+      <p>&copy; 2026 DivvyUp &nbsp;·&nbsp; Split smarter, not harder.</p>
     </footer>
+
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+
   </body>
 </html>
