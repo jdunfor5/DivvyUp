@@ -1,26 +1,17 @@
 import { useState, useEffect } from 'react'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
-import { getToken, getCurrentUser, clearToken } from './api'
+import { getToken, getCurrentUser, clearToken, getGroups, createGroup } from './api'
 import './App.css'
-
-const mockGroups = [
-  { id: 1, name: 'Apartment', memberCount: 3 },
-  { id: 2, name: 'Trip to Vegas', memberCount: 5 },
-  { id: 3, name: 'Work Lunch', memberCount: 4 },
-]
-
-const mockFriends = [
-  { id: 1, name: 'Alex', initials: 'AX' },
-  { id: 2, name: 'Jordan', initials: 'JO' },
-  { id: 3, name: 'Casey', initials: 'CA' },
-]
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null)
   const [authChecked, setAuthChecked] = useState(false)
+  const [groups, setGroups] = useState([])
   const [groupsOpen, setGroupsOpen] = useState(true)
   const [friendsOpen, setFriendsOpen] = useState(true)
+  const [creatingGroup, setCreatingGroup] = useState(false)
+  const [newGroupName, setNewGroupName] = useState('')
 
   // On load, restore session from stored token
   useEffect(() => {
@@ -34,9 +25,37 @@ function App() {
     }
   }, [])
 
+  useEffect(() => {
+    if (currentUser) {
+      loadGroups()
+    }
+  }, [currentUser])
+
+  async function loadGroups() {
+    try {
+      const data = await getGroups()
+      setGroups(data)
+    } catch (err) {
+      console.error('Failed to load groups:', err)
+    }
+  }
+
+  async function handleCreateGroup() {
+    if (!newGroupName.trim()) return
+    try {
+      await createGroup({ name: newGroupName })
+      setNewGroupName('')
+      setCreatingGroup(false)
+      loadGroups()
+    } catch (err) {
+      alert('Failed to create group: ' + err.message)
+    }
+  }
+
   function handleLogout() {
     clearToken()
     setCurrentUser(null)
+    setGroups([])
   }
 
   if (!authChecked) return null
@@ -65,15 +84,32 @@ function App() {
               <span className="chevron">{groupsOpen ? '▾' : '▸'}</span>
             </button>
             {groupsOpen && (
-              <ul className="dropdown-list">
-                {mockGroups.map(g => (
-                  <li key={g.id} className="dropdown-item">
-                    <span className="item-avatar group-avatar">{g.name[0]}</span>
-                    <span className="item-label">{g.name}</span>
-                    <span className="item-count">{g.memberCount}</span>
-                  </li>
-                ))}
-              </ul>
+              <div>
+                <ul className="dropdown-list">
+                  {groups.map(g => (
+                    <li key={g.id} className="dropdown-item">
+                      <span className="item-avatar group-avatar">{g.name[0]}</span>
+                      <span className="item-label">{g.name}</span>
+                      <span className="item-count">{g.members?.length || 1}</span>
+                    </li>
+                  ))}
+                </ul>
+                {creatingGroup ? (
+                  <div className="create-group-form">
+                    <input
+                      type="text"
+                      placeholder="Group name"
+                      value={newGroupName}
+                      onChange={e => setNewGroupName(e.target.value)}
+                      onKeyPress={e => e.key === 'Enter' && handleCreateGroup()}
+                    />
+                    <button onClick={handleCreateGroup}>Create</button>
+                    <button onClick={() => setCreatingGroup(false)}>Cancel</button>
+                  </div>
+                ) : (
+                  <button className="add-group-btn" onClick={() => setCreatingGroup(true)}>+ Add Group</button>
+                )}
+              </div>
             )}
           </div>
 
@@ -91,12 +127,10 @@ function App() {
             </button>
             {friendsOpen && (
               <ul className="dropdown-list">
-                {mockFriends.map(f => (
-                  <li key={f.id} className="dropdown-item">
-                    <span className="item-avatar friend-avatar">{f.initials}</span>
-                    <span className="item-label">{f.name}</span>
-                  </li>
-                ))}
+                <li className="dropdown-item">
+                  <span className="item-avatar friend-avatar">FR</span>
+                  <span className="item-label">Friends feature coming soon</span>
+                </li>
               </ul>
             )}
           </div>
@@ -121,7 +155,7 @@ function App() {
       </nav>
 
       <main className="main-content">
-        <Dashboard />
+        <Dashboard groups={groups} />
       </main>
     </div>
   )
