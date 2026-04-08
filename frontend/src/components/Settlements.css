@@ -1,0 +1,95 @@
+.settlements .card-header {
+  margin-bottom: 16px;
+}
+
+.no-settlements {
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+  padding: 20px;
+}
+
+.settlements-section {
+  margin-bottom: 20px;
+}
+
+.settlements-section h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.settlements-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settlement-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.settlement-item.completed {
+  opacity: 0.7;
+}
+
+.settlement-info {
+  flex: 1;
+}
+
+.settlement-description {
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0 0 4px 0;
+}
+
+.settlement-date {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.settlement-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-confirm, .btn-cancel {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.btn-confirm {
+  background: var(--accent);
+  color: white;
+}
+
+.btn-confirm:hover {
+  background: var(--accent-dark);
+}
+
+.btn-cancel {
+  background: var(--border);
+  color: var(--text-secondary);
+}
+
+.btn-cancel:hover {
+  background: #d1d5db;
+}

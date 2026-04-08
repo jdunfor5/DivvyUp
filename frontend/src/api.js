@@ -34,29 +34,55 @@ export async function login(email, password) {
 }
 
 export async function getCurrentUser() {
-  const res = await fetch(`${BASE_URL}/users/me`, {
-    headers: authHeaders(),
-  })
-  if (!res.ok) throw new Error('Failed to fetch user')
-  return res.json()
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+  
+  try {
+    const res = await fetch(`${BASE_URL}/users/me`, {
+      headers: authHeaders(),
+      signal: controller.signal,
+    })
+    clearTimeout(timeoutId)
+    if (!res.ok) throw new Error('Failed to fetch user')
+    return res.json()
+  } catch (err) {
+    clearTimeout(timeoutId)
+    if (err.name === 'AbortError') {
+      throw new Error('Request timeout')
+    }
+    throw err
+  }
 }
 
 // Generic authenticated request helper
 export async function api(path, options = {}) {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...authHeaders(),
-      ...options.headers,
-    },
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}))
-    throw new Error(err.detail || `Request failed: ${res.status}`)
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+  
+  try {
+    const res = await fetch(`${BASE_URL}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders(),
+        ...options.headers,
+      },
+      signal: controller.signal,
+    })
+    clearTimeout(timeoutId)
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      throw new Error(err.detail || `Request failed: ${res.status}`)
+    }
+    if (res.status === 204) return null
+    return res.json()
+  } catch (err) {
+    clearTimeout(timeoutId)
+    if (err.name === 'AbortError') {
+      throw new Error('Request timeout')
+    }
+    throw err
   }
-  if (res.status === 204) return null
-  return res.json()
 }
 
 // ── Groups ───────────────────────────────────────────────────
@@ -69,8 +95,8 @@ export async function createGroup(data) {
   return api('/groups/', { method: 'POST', body: JSON.stringify(data) })
 }
 
-export async function getGroup(groupId) {
-  return api(`/groups/${groupId}`)
+export async function deleteGroup(groupId) {
+  return api(`/groups/${groupId}`, { method: 'DELETE' })
 }
 
 export async function getGroupBalances(groupId) {
@@ -80,6 +106,12 @@ export async function getGroupBalances(groupId) {
 export async function getGroupMembers(groupId) {
   return api(`/groups/${groupId}/members`)
 }
+
+export async function joinGroup(inviteCode) {
+  return api('/groups/join', { method: 'POST', body: JSON.stringify({ invite_code: inviteCode }) })
+}
+
+// ── Settlements ──────────────────────────────────────────────
 
 // ── Expenses ─────────────────────────────────────────────────
 
@@ -97,4 +129,22 @@ export async function updateExpense(groupId, expenseId, data) {
 
 export async function deleteExpense(groupId, expenseId) {
   return api(`/groups/${groupId}/expenses/${expenseId}`, { method: 'DELETE' })
+}
+
+// ── Settlements ──────────────────────────────────────────────
+
+export async function getSettlements(groupId) {
+  return api(`/groups/${groupId}/settlements/`)
+}
+
+export async function createSettlement(groupId, payeeId, data) {
+  return api(`/groups/${groupId}/settlements/${payeeId}`, { method: 'POST', body: JSON.stringify(data) })
+}
+
+export async function confirmSettlement(groupId, settlementId) {
+  return api(`/groups/${groupId}/settlements/${settlementId}/confirm`, { method: 'PATCH' })
+}
+
+export async function cancelSettlement(groupId, settlementId) {
+  return api(`/groups/${groupId}/settlements/${settlementId}/cancel`, { method: 'PATCH' })
 }

@@ -163,14 +163,24 @@ async def delete(db: AsyncSession, current_user: UserRead, group_uuid: UUID, exp
 
 
 def _build_splits(expense_id: UUID, members: list, base_amount: Decimal, payer_id: UUID) -> list:
-    num_members = len(members)
+    if len(members) < 2:
+        raise ValueError("Group must have at least 2 members to split an expense.")
+
     base = Decimal(str(base_amount)).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-    share = (base / num_members).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-    remainder = base - (share * num_members)
+    num_debtors = len(members) - 1
+    share = (base / num_debtors).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+    remainder = base - (share * num_debtors)
 
     splits = []
     for member in members:
-        member_share = share + remainder if member.user_id == payer_id else share
+        if member.user_id == payer_id:
+            member_share = Decimal("0.00")
+        else:
+            member_share = share
+            if remainder > 0:
+                member_share += remainder
+                remainder = Decimal("0.00")
+
         splits.append(ExpenseSplit(
             expense_id   = expense_id,
             user_id      = member.user_id,
