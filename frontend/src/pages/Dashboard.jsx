@@ -164,6 +164,7 @@ function Dashboard({ groups = [] }) {
     amount: Number(exp.amount) * -1,
     date: new Date(exp.expense_date).toISOString().split('T')[0],
     category: 'Misc',
+    paidByName: exp.paid_by_name || null,
   }))
 
   const transformedMembers = members.map(mem => {
@@ -186,7 +187,7 @@ function Dashboard({ groups = [] }) {
       owes: Number(balance),
       paymentsToYou,
       paymentsFromYou,
-      canSettle: Number(balance) < 0,
+      canSettle: Number(balance) > 0,
       isYou,
     }
   })
@@ -203,9 +204,7 @@ function Dashboard({ groups = [] }) {
     .reduce((sum, exp) => sum + Number(exp.amount), 0)
 
   const userBalance = balances.find(b => b.user_id === currentUser?.id)?.net_balance || 0
-  const groupOwesYou = balances
-    .filter(b => b.user_id !== currentUser?.id)
-    .reduce((sum, b) => sum + Math.max(0, Number(b.net_balance)), 0)
+  const groupOwesYou = Math.max(0, Number(userBalance))
 
   return (
     <div className="dashboard">
