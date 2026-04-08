@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:8000'
+const BASE_URL = 'http://127.0.0.1:8000'
 
 export function getToken() {
   return localStorage.getItem('token')
@@ -57,4 +57,44 @@ export async function api(path, options = {}) {
   }
   if (res.status === 204) return null
   return res.json()
+}
+
+// ── Groups ───────────────────────────────────────────────────
+
+export async function getGroups() {
+  return api('/groups/')
+}
+
+export async function createGroup(data) {
+  return api('/groups/', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export async function getGroup(groupId) {
+  return api(`/groups/${groupId}`)
+}
+
+export async function getGroupBalances(groupId) {
+  return api(`/groups/${groupId}/balances`)
+}
+
+export async function getGroupMembers(groupId) {
+  return api(`/groups/${groupId}/members`)
+}
+
+// ── Expenses ─────────────────────────────────────────────────
+
+export async function getExpenses(groupId) {
+  return api(`/groups/${groupId}/expenses/`)
+}
+
+export async function createExpense(groupId, data) {
+  return api(`/groups/${groupId}/expenses/`, { method: 'POST', body: JSON.stringify(data) })
+}
+
+export async function updateExpense(groupId, expenseId, data) {
+  return api(`/groups/${groupId}/expenses/${expenseId}`, { method: 'PATCH', body: JSON.stringify(data) })
+}
+
+export async function deleteExpense(groupId, expenseId) {
+  return api(`/groups/${groupId}/expenses/${expenseId}`, { method: 'DELETE' })
 }
