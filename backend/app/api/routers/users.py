@@ -1,5 +1,5 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from ...dependencies.database import get_session
 from ...dependencies.security import get_current_user
@@ -18,6 +18,10 @@ async def create_user(request: UserCreate, db: AsyncSession = Depends(get_sessio
 @router.get("/me", response_model=UserRead)
 async def read_current_user(current_user: UserRead = Depends(get_current_user)):
     return current_user
+
+@router.get("/search", response_model=list[UserRead])
+async def search_users(email: str = Query(..., min_length=1), current_user: UserRead = Depends(get_current_user), db: AsyncSession = Depends(get_session)):
+    return await service.search(db, current_user, email)
 
 @router.get("/{user_uuid}", response_model=UserRead)
 async def read_user(user_uuid: UUID, _current_user: UserRead = Depends(get_current_user), db: AsyncSession = Depends(get_session)):

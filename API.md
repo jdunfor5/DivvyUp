@@ -630,3 +630,63 @@ GET /groups/{uuid}/balances
 | 403  | Forbidden (authenticated but not authorized) |
 | 404  | Resource not found |
 | 500  | Server error |
+---
+
+## Friends
+
+Friends are a directional contacts list — adding someone puts them in your list. They don't need to reciprocate. Balance is calculated across all groups you share with that person.
+
+### POST /friends/{user_uuid}
+Add a user to your friends list. **Auth required.**
+
+Errors:
+- `400` — adding yourself, or already friends
+- `404` — user not found
+
+**Response** — 201
+```json
+{ "message": "uuid has been added to your friends list." }
+```
+
+### GET /friends/
+List all your friends with balances. **Auth required.**
+
+**Response** — `list[FriendRead]`
+```json
+[
+  {
+    "id": "uuid",
+    "email": "friend@example.com",
+    "display_name": "Alex",
+    "avatar_url": null,
+    "added_at": "2026-04-07T...",
+    "balance": "20.00"
+  }
+]
+```
+
+`balance` — positive means they owe you, negative means you owe them. Calculated across all shared groups, adjusted for completed settlements.
+
+### GET /friends/{user_uuid}
+Get a single friend with their balance. **Auth required.**
+
+**Response** — `FriendRead` (same shape as list above)
+
+### DELETE /friends/{user_uuid}
+Remove a friend from your list. **Auth required.**
+
+**Response** — 204 No Content
+
+---
+
+## Users — Search
+
+### GET /users/search?email=...
+Search for users by email (partial match, case-insensitive). **Auth required.**
+Returns up to 10 results, never includes the current user.
+
+**Example:** `GET /users/search?email=jane`
+
+**Response** — `list[UserRead]`
+
+Typical flow: search by email to find a user's UUID, then call `POST /friends/{user_uuid}`.

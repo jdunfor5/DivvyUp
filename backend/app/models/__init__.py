@@ -7,4 +7,5 @@ from app.models import (
     settlement,
     comment,
     notification,
+    friendship,
 )
