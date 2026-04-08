@@ -64,6 +64,7 @@ class ExpenseRead(BaseModel):
     id: uuid.UUID
     group_id: uuid.UUID
     paid_by: uuid.UUID
+    paid_by_name: Optional[str] = None
     description: str
     amount: Decimal
     currency: str

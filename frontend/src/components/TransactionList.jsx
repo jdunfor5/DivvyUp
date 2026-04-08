@@ -14,7 +14,7 @@ function TransactionList({ transactions }) {
               <div className="transaction-category-dot" data-category={tx.category} />
               <div>
                 <p className="transaction-desc">{tx.description}</p>
-                <p className="transaction-date">{tx.date} · {tx.category}</p>
+                <p className="transaction-date">{tx.date} · {tx.category}{tx.paidByName ? ` · Paid by ${tx.paidByName}` : ''}</p>
               </div>
             </div>
             <p className={`transaction-amount ${tx.amount < 0 ? 'negative' : 'positive'}`}>
