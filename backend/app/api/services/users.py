@@ -122,3 +122,18 @@ async def delete_current_user(db: AsyncSession, current_user: UserRead):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
 
     return None
+
+async def search(db: AsyncSession, current_user: UserRead, email_query: str):
+    try:
+        statement = (
+            select(User)
+            .where(User.email.ilike(f"%{email_query}%"), User.id != current_user.id)
+            .limit(10)
+        )
+        result = await db.execute(statement)
+        users = result.scalars().all()
+    except SQLAlchemyError as e:
+        error = str(e.__dict__["orig"])
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+
+    return users
