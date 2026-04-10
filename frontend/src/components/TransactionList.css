@@ -49,3 +49,87 @@
 
 .transaction-amount.negative { color: var(--expense); }
 .transaction-amount.positive { color: var(--income); }
+
+.transaction-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.expense-comment-panel {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.comment-row {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.comment-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.comment-sender {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.comment-body {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.comment-date {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.comment-input {
+  width: 100%;
+  min-height: 70px;
+  padding: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.btn-comment-toggle {
+  border: none;
+  background: #dcfce7;
+  color: #166534;
+  padding: 6px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.btn-comment-toggle:hover {
+  background: #bbf7d0;
+}
+
+.btn-comment-submit {
+  align-self: flex-end;
+  margin-top: 4px;
+  padding: 8px 14px;
+}
