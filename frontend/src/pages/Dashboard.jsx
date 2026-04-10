@@ -3,7 +3,7 @@ import SummaryCard from '../components/SummaryCard'
 import TransactionList from '../components/TransactionList'
 import GroupMembers from '../components/GroupMembers'
 import Settlements from '../components/Settlements'
-import { getExpenses, getGroupBalances, getGroupMembers, createExpense, getCurrentUser, getSettlements, createSettlement, confirmSettlement, cancelSettlement } from '../api'
+import { getExpenses, getGroupBalances, getGroupMembers, createExpense, getCurrentUser, getSettlements, createSettlement, confirmSettlement, cancelSettlement, removeMember, transferAdmin, leaveGroup } from '../api'
 import './Dashboard.css'
 
 function Dashboard({ groups = [] }) {
@@ -141,6 +141,44 @@ function Dashboard({ groups = [] }) {
     }
   }
 
+  async function handleRemoveMember(userId){
+    if (!selectedGroup) return
+    if (!confirm('Remove this member from the group?')) return
+    try {
+      await removeMember(selectedGroup.id, userId)
+      loadGroupData(selectedGroup.id)
+    } catch (err) {
+      alert('Failed to remove member: ' + err.message)
+    }
+  }
+
+  async function handleTransferAdmin(userId){
+    if (!selectedGroup) return
+    if (!confirm('Transfer admin to this member? You will become a regular member')) return
+    try {
+      await transferAdmin(selectedGroup.id, userId)
+      loadGroupData(selectedGroup.id)
+    } catch (err) {
+      alert('Failed to transfer admin: ' + err.message)
+    }
+  }
+
+  async function handleLeaveGroup(){
+    if (!selectedGroup) return
+    if (!confirm('Are you sure you want to leave this group?')) return
+    try {
+      await leaveGroup(selectedGroup.id)
+      setSelectedGroup(null)
+      loadGroupData(selectedGroup.id)
+    } catch (err) {
+      if (err.message.includes('Admin')){
+        alert('Failed to leave group: there needs to be an admin in the group. Transfer admin to someone else first.')
+      } else {
+        alert('Failed to leave group: ' + err.message)
+      }
+    }
+  }
+
   if (!groups.length) {
     return (
       <div className="dashboard">
@@ -177,6 +215,7 @@ function Dashboard({ groups = [] }) {
       .reduce((sum, s) => sum + Number(s.amount), 0)
 
     const isYou = mem.user_id === currentUser?.id
+    const isAdmin = mem.role === 'admin'
     const displayName = isYou ? 'You' : (mem.display_name || 'Friend')
     const initialsSource = isYou ? 'You' : (mem.display_name || 'Friend')
 
@@ -189,6 +228,7 @@ function Dashboard({ groups = [] }) {
       paymentsFromYou,
       canSettle: Number(balance) > 0,
       isYou,
+      isAdmin,
     }
   })
 
@@ -205,6 +245,7 @@ function Dashboard({ groups = [] }) {
 
   const userBalance = balances.find(b => b.user_id === currentUser?.id)?.net_balance || 0
   const groupOwesYou = Math.max(0, Number(userBalance))
+  const currentUserIsAdmin = members.find(m => m.user_id === currentUser?.id)?.role === 'admin'
 
   return (
     <div className="dashboard">
@@ -239,7 +280,15 @@ function Dashboard({ groups = [] }) {
           <TransactionList transactions={transactions} />
         </div>
         <div className="grid-right">
-          <GroupMembers members={transformedMembers} onSettlePayment={handleSettlePayment} />
+          <GroupMembers
+            members = {transformedMembers}
+            currentUser={currentUser}
+            isAdmin={currentUserIsAdmin}
+            onSettlePayment={handleSettlePayment}
+            onRemoveMember={handleRemoveMember}
+            onTransferAdmin={handleTransferAdmin}
+            onLeaveGroup={handleLeaveGroup}
+            />
           <Settlements 
             settlements={settlements} 
             currentUserId={currentUser?.id}
