@@ -148,3 +148,17 @@ export async function confirmSettlement(groupId, settlementId) {
 export async function cancelSettlement(groupId, settlementId) {
   return api(`/groups/${groupId}/settlements/${settlementId}/cancel`, { method: 'PATCH' })
 }
+
+// ── Group Management ──────────────────────────────────────────────
+
+export async function removeMember(groupId, userId){
+  return api(`/groups/${groupId}/members/${userId}`, { method: 'DELETE'})
+}
+
+export async function transferAdmin(groupId, userId){
+  return api(`/groups/${groupId}/members/${userId}/transfer`, { method: 'PATCH'})
+}
+
+export async function leaveGroup(groupId){
+  return api(`/groups/${groupId}/members`, { method: 'DELETE'})
+}
