@@ -218,9 +218,10 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
     const initialsSource = isYou ? 'You' : (mem.display_name || 'Friend')
 
     return {
-      id: mem.user_id,
+      id: mem.user_id,  
       name: displayName,
       initials: initialsSource.split(' ').map(n => n[0]).join('').toUpperCase(),
+      avatar: mem.avatar_emoji,
       owes: Number(balance),
       paymentsToYou,
       paymentsFromYou,
