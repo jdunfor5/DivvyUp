@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import SummaryCard from '../components/SummaryCard'
 import TransactionList from '../components/TransactionList'
 import GroupMembers from '../components/GroupMembers'
@@ -6,8 +6,7 @@ import Settlements from '../components/Settlements'
 import { getExpenses, getGroupBalances, getGroupMembers, createExpense, getCurrentUser, getSettlements, createSettlement, confirmSettlement, cancelSettlement, removeMember, transferAdmin, leaveGroup } from '../api'
 import './Dashboard.css'
 
-function Dashboard({ groups = [] }) {
-  const [selectedGroup, setSelectedGroup] = useState(null)
+function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
   const [expenses, setExpenses] = useState([])
   const [balances, setBalances] = useState([])
   const [members, setMembers] = useState([])
@@ -16,15 +15,14 @@ function Dashboard({ groups = [] }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
+  const selectedGroup = useMemo(() => {
+    if (!groups.length) return null
+    return groups.find(g => g.id === selectedGroupId) || groups[0]
+  }, [groups, selectedGroupId])
+
   useEffect(() => {
     getCurrentUser().then(setCurrentUser).catch(console.error)
   }, [])
-
-  useEffect(() => {
-    if (groups.length > 0 && !selectedGroup) {
-      setSelectedGroup(groups[0])
-    }
-  }, [groups, selectedGroup])
 
   useEffect(() => {
     if (selectedGroup) {
@@ -257,27 +255,15 @@ function Dashboard({ groups = [] }) {
         <button className="btn-primary" onClick={handleAddTransaction}>+ Add Transaction</button>
       </div>
 
-      <div className="group-selector">
-        <select
-          value={selectedGroup?.id || ''}
-          onChange={e => setSelectedGroup(groups.find(g => g.id === e.target.value))}
-        >
-          {groups.map(g => (
-            <option key={g.id} value={g.id}>{g.name}</option>
-          ))}
-        </select>
-      </div>
-
       <div className="summary-cards">
         <SummaryCard title="Total Balance" amount={Number(userBalance)} type="balance" />
-        <SummaryCard title="Monthly Income" amount={0} type="income" />
         <SummaryCard title="Monthly Expenses" amount={monthlyExpenses} type="expense" />
         <SummaryCard title="Group Owes You" amount={groupOwesYou} type="owed" />
       </div>
 
       <div className="dashboard-grid">
         <div className="grid-left">
-          <TransactionList transactions={transactions} />
+          <TransactionList transactions={transactions} groupId={selectedGroup?.id} currentUserId={currentUser?.id} groupMembers={members} />
         </div>
         <div className="grid-right">
           <GroupMembers

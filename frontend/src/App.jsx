@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
-import { getToken, getCurrentUser, clearToken, getGroups, createGroup, deleteGroup, joinGroup } from './api'
+import { getToken, getCurrentUser, clearToken, getGroups, createGroup, deleteGroup, joinGroup, getGroupMembers } from './api'
 import './App.css'
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null)
   const [authChecked, setAuthChecked] = useState(false)
   const [groups, setGroups] = useState([])
+  const [selectedGroupId, setSelectedGroupId] = useState(null)
   const [groupsOpen, setGroupsOpen] = useState(true)
   const [friendsOpen, setFriendsOpen] = useState(true)
   const [creatingGroup, setCreatingGroup] = useState(false)
@@ -42,7 +43,20 @@ function App() {
   async function loadGroups() {
     try {
       const data = await getGroups()
-      setGroups(data)
+      const groupsWithCounts = await Promise.all(
+        data.map(async g => {
+          try {
+            const members = await getGroupMembers(g.id)
+            return { ...g, memberCount: members.length }
+          } catch (err) {
+            console.error('Failed to load group members for', g.id, err)
+            return { ...g, memberCount: g.members?.length || 1 }
+          }
+        })
+      )
+      setGroups(groupsWithCounts)
+      const activeId = groupsWithCounts.find(g => g.id === selectedGroupId)?.id || groupsWithCounts[0]?.id || null
+      setSelectedGroupId(activeId)
     } catch (err) {
       console.error('Failed to load groups:', err)
     }
@@ -84,10 +98,23 @@ function App() {
     }
   }
 
+  async function copyInviteCode(code) {
+    try {
+      await navigator.clipboard.writeText(code)
+    } catch (err) {
+      console.error('Copy failed:', err)
+    }
+  }
+
   function handleLogout() {
     clearToken()
     setCurrentUser(null)
     setGroups([])
+    setSelectedGroupId(null)
+  }
+
+  function handleSelectGroup(groupId) {
+    setSelectedGroupId(groupId)
   }
 
   if (!authChecked) return null
@@ -119,17 +146,20 @@ function App() {
               <div>
                 <ul className="dropdown-list">
                   {groups.map(g => (
-                    <li key={g.id} className="dropdown-item">
+                    <li
+                      key={g.id}
+                      className={`dropdown-item ${g.id === selectedGroupId ? 'active' : ''}`}
+                      onClick={() => handleSelectGroup(g.id)}
+                    >
                       <span className="item-avatar group-avatar">{g.name[0]}</span>
                       <span className="item-label">{g.name}</span>
                       <div className="item-actions">
-                        <span className="item-count">{g.members?.length || 1}</span>
+                        <span className="item-count">{g.memberCount ?? (g.members?.length || 1)}</span>
                         <button 
                           className="btn-share" 
                           onClick={(e) => {
                             e.stopPropagation()
-                            navigator.clipboard.writeText(g.invite_code)
-                            alert(`Invite code copied: ${g.invite_code}`)
+                            copyInviteCode(g.invite_code)
                           }}
                           title="Copy invite code"
                         >
@@ -162,7 +192,7 @@ function App() {
                     <button onClick={() => setCreatingGroup(false)}>Cancel</button>
                   </div>
                 ) : (
-                  <button className="add-group-btn" onClick={() => setCreatingGroup(true)}>+ Add Group</button>
+                  <button className="add-group-btn" onClick={() => setCreatingGroup(true)}>+ Create Group</button>
                 )}
                 {joiningGroup ? (
                   <div className="create-group-form">
@@ -222,7 +252,7 @@ function App() {
       </nav>
 
       <main className="main-content">
-        <Dashboard groups={groups} />
+        <Dashboard groups={groups} selectedGroupId={selectedGroupId} onSelectGroup={handleSelectGroup} />
       </main>
     </div>
   )
