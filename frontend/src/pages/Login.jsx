@@ -145,7 +145,7 @@ const s = {
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '100vh',
-    background: '#f0faf4',
+    background: '#f7ebe9',
     fontFamily: "'Plus Jakarta Sans', sans-serif",
   },
   card: {
@@ -166,7 +166,7 @@ const s = {
   },
   logoIcon: {
     fontSize: '20px',
-    background: '#dcfce7',
+    background: '#f2e5e7',
     width: '36px',
     height: '36px',
     borderRadius: '10px',
@@ -183,7 +183,7 @@ const s = {
   tabs: {
     display: 'flex',
     borderRadius: '10px',
-    background: '#f0fdf4',
+    background: '#f7e9eb',
     padding: '4px',
     marginBottom: '1.5rem',
     gap: '4px',
@@ -203,7 +203,7 @@ const s = {
   },
   tabActive: {
     background: '#ffffff',
-    color: '#16a34a',
+    color: '#7D323F',
     boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
   },
   form: {
@@ -247,7 +247,7 @@ const s = {
     padding: '0.75rem',
     borderRadius: '10px',
     border: 'none',
-    background: '#22c55e',
+    background: '#9A4F59',
     color: '#fff',
     fontSize: '14px',
     fontWeight: '700',
@@ -270,7 +270,7 @@ const s = {
   switchLink: {
     background: 'none',
     border: 'none',
-    color: '#16a34a',
+    color: '#7D323F',
     fontWeight: '700',
     fontSize: '13px',
     cursor: 'pointer',
