@@ -107,6 +107,17 @@ export async function getGroupMembers(groupId) {
   return api(`/groups/${groupId}/members`)
 }
 
+export async function getExpenseComments(groupId, expenseId) {
+  return api(`/groups/${groupId}/expenses/${expenseId}/comments/`)
+}
+
+export async function createExpenseComment(groupId, expenseId, body) {
+  return api(`/groups/${groupId}/expenses/${expenseId}/comments/`, {
+    method: 'POST',
+    body: JSON.stringify({ body }),
+  })
+}
+
 export async function joinGroup(inviteCode) {
   return api('/groups/join', { method: 'POST', body: JSON.stringify({ invite_code: inviteCode }) })
 }

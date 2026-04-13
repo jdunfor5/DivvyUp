@@ -223,6 +223,14 @@ body {
   background: rgba(154,79,89,0.14);
 }
 
+.copy-message {
+  font-size: 12px;
+  color: var(--accent-dark);
+  margin-left: 6px;
+  white-space: nowrap;
+}
+
+
 .item-count {
   font-size: 11px;
   color: var(--text-secondary);

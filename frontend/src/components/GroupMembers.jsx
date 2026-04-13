@@ -15,7 +15,7 @@ function GroupMembers({ members, currentUser, isAdmin, onSettlePayment, onRemove
       <ul>
         {members.map((m) => (
           <li key={m.id} className="member-item">
-            <div className="member-avatar">{m.initials}</div>
+            <div className="member-avatar">{m.avatar}</div>
             <div className="member-info">
               <p className="member-name">
                 {m.name}
