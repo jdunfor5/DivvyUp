@@ -4,6 +4,7 @@ from typing import Annotated
 
 import bcrypt
 import jwt
+import emoji
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
@@ -14,11 +15,11 @@ from app.dependencies.database import get_session
 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
+FALLBACK_EMOJI = ":pile_of_poo:"
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
-
-# ── Password helpers ──────────────────────────────────────────
+# ── Security helpers ──────────────────────────────────────────
 
 def hash_password(plain: str) -> str:
     return bcrypt.hashpw(plain.encode(), bcrypt.gensalt()).decode()
@@ -27,6 +28,8 @@ def hash_password(plain: str) -> str:
 def verify_password(plain: str, hashed: str) -> bool:
     return bcrypt.checkpw(plain.encode(), hashed.encode())
 
+def sanitize_emoji(plain: str) -> str:
+    return plain if emoji.is_emoji(plain) else emoji.emojize(FALLBACK_EMOJI)
 
 # ── JWT helpers ───────────────────────────────────────────────
 

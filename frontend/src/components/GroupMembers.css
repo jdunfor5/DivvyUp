@@ -31,9 +31,21 @@
   font-weight: 500;
 }
 
+.member-balance-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .member-balance {
   font-size: 12px;
-  margin-top: 2px;
+  margin: 0;
+}
+
+.member-settlements {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
 }
 
 .member-balance.owes-you { color: var(--income); }
@@ -53,3 +65,53 @@
 }
 
 .btn-settle:hover { background: #dde0fb; }
+
+.btn-settle:disabled {
+  background: var(--border);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+.role-badge {
+  background: var(--accent-light);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.member-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-danger-sm {
+  background: #fdecea;
+  color: #d32f2f;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-danger-sm:hover { background: #f5c6c6; }
+
+.btn-secondary-sm {
+  background: var(--border);
+  color: var(--text-secondary);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.btn-secondary-sm:hover { background: #dde0fb; color: var(--accent); }

@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from ...models.expense import Expense, ExpenseCreate, ExpenseUpdate, ExpenseSplit
 from ...models.group import GroupMember, GroupMemberRole
-from ...models.user import UserRead
+from ...models.user import User, UserRead
 
 
 async def create(db: AsyncSession, current_user: UserRead, group_uuid: UUID, request: ExpenseCreate):
@@ -55,9 +55,18 @@ async def read_all(db: AsyncSession, current_user: UserRead, group_uuid: UUID):
         if not member_result.scalar_one_or_none():
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not a member of this group.")
 
-        statement = select(Expense).where(Expense.group_id == group_uuid, Expense.is_deleted == False)
+        statement = (
+            select(Expense, User.display_name)
+            .join(User, User.id == Expense.paid_by)
+            .where(Expense.group_id == group_uuid, Expense.is_deleted == False)
+        )
         result = await db.execute(statement)
-        expenses = result.scalars().all()
+        rows = result.all()
+        expenses = []
+        for expense, paid_by_name in rows:
+            d = {c.key: getattr(expense, c.key) for c in expense.__table__.columns}
+            d["paid_by_name"] = paid_by_name
+            expenses.append(d)
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
@@ -163,14 +172,24 @@ async def delete(db: AsyncSession, current_user: UserRead, group_uuid: UUID, exp
 
 
 def _build_splits(expense_id: UUID, members: list, base_amount: Decimal, payer_id: UUID) -> list:
-    num_members = len(members)
+    if len(members) < 2:
+        raise ValueError("Group must have at least 2 members to split an expense.")
+
     base = Decimal(str(base_amount)).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-    share = (base / num_members).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-    remainder = base - (share * num_members)
+    num_debtors = len(members) - 1
+    share = (base / num_debtors).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+    remainder = base - (share * num_debtors)
 
     splits = []
     for member in members:
-        member_share = share + remainder if member.user_id == payer_id else share
+        if member.user_id == payer_id:
+            member_share = Decimal("0.00")
+        else:
+            member_share = share
+            if remainder > 0:
+                member_share += remainder
+                remainder = Decimal("0.00")
+
         splits.append(ExpenseSplit(
             expense_id   = expense_id,
             user_id      = member.user_id,

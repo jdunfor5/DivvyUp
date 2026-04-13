@@ -181,8 +181,6 @@ body {
   flex: 1;
 }
 
-<<<<<<< Updated upstream
-=======
 .item-actions {
   display: flex;
   align-items: center;
@@ -221,7 +219,6 @@ body {
   background: rgba(154,79,89,0.14);
 }
 
->>>>>>> Stashed changes
 .item-count {
   font-size: 11px;
   color: var(--text-secondary);
@@ -229,6 +226,85 @@ body {
   border-radius: 99px;
   padding: 1px 7px;
   font-weight: 600;
+}
+
+/* ── Add group button ── */
+.add-group-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  margin: 8px 0 4px;
+  border-radius: 8px;
+  border: 1.5px dashed var(--accent);
+  background: none;
+  color: var(--accent-dark);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, border-style 0.15s;
+}
+
+.add-group-btn:hover {
+  background: var(--accent-light);
+  border-style: solid;
+}
+
+/* ── Create group form ── */
+.create-group-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  margin: 8px 0 4px;
+  background: var(--accent-xlight);
+  border-radius: 8px;
+  border: 1px solid var(--accent-light);
+}
+
+.create-group-form input {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.create-group-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.create-group-form button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s;
+}
+
+.create-group-form button:first-of-type {
+  background: var(--accent);
+  color: white;
+}
+
+.create-group-form button:first-of-type:hover {
+  background: var(--accent-dark);
+}
+
+.create-group-form button:last-of-type {
+  background: var(--border);
+  color: var(--text-secondary);
+}
+
+.create-group-form button:last-of-type:hover {
+  background: #d1d5db;
 }
 
 /* ── Bottom add buttons ── */
