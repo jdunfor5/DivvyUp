@@ -127,14 +127,14 @@ async def read_group_members(db: AsyncSession, current_user: UserRead, group_uui
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not a member of this group.")
 
         statement = (
-            select(GroupMember, User.display_name, User.email, User.avatar_url)
+            select(GroupMember, User.display_name, User.email, User.avatar_emoji)
             .join(User, User.id == GroupMember.user_id)
             .where(GroupMember.group_id == group_uuid)
         )
         result = await db.execute(statement)
         rows = result.all()
         group_members = []
-        for member, display_name, email, avatar_url in rows:
+        for member, display_name, email, avatar_emoji in rows:
             group_members.append({
                 "group_id": member.group_id,
                 "user_id": member.user_id,
@@ -142,7 +142,7 @@ async def read_group_members(db: AsyncSession, current_user: UserRead, group_uui
                 "joined_at": member.joined_at,
                 "display_name": display_name,
                 "email": email,
-                "avatar_url": avatar_url,
+                "avatar_emoji": avatar_emoji,
             })
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])

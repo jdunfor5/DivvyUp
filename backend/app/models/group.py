@@ -83,7 +83,7 @@ class GroupMemberRead(BaseModel):
     joined_at: datetime
     display_name: Optional[str] = None
     email: Optional[str] = None
-    avatar_url: Optional[str] = None
+    avatar_emoji: Optional[str] = None
 
     class Config:
         from_attributes = True

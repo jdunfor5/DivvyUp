@@ -5,12 +5,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from ...models.user import User, UserCreate, UserRead, UserUpdate
 from ...models.group import Group, GroupMember, GroupMemberRole
-from ...dependencies.security import hash_password
+from ...dependencies.security import hash_password, sanitize_emoji
 
 async def create_user(db: AsyncSession, request: UserCreate):
     new_user = User(
         email           = request.email,
         password_hash   = hash_password(request.password),
+        avatar_emoji    = sanitize_emoji(request.avatar_emoji),
         display_name    = request.display_name,
         phone           = request.phone,
         base_currency   = request.base_currency
@@ -58,6 +59,8 @@ async def update_current_user(db: AsyncSession, current_user: UserRead, request:
         update_user = request.model_dump(exclude_unset=True)
 
         for field, value in update_user.items():
+            if field == "avatar_emoji":
+                value = sanitize_emoji(value)
             setattr(user, field, value)
 
         await db.commit()
