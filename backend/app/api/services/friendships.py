@@ -49,7 +49,7 @@ async def list_friends(db: AsyncSession, current_user: UserRead):
                 "id":           user.id,
                 "email":        user.email,
                 "display_name": user.display_name,
-                "avatar_url":   user.avatar_url,
+                "avatar_emoji":   user.avatar_emoji,
                 "added_at":     added_at,
                 "balance":      balance,
             })
@@ -81,7 +81,7 @@ async def get_friend(db: AsyncSession, current_user: UserRead, friend_uuid: UUID
         "id":           user.id,
         "email":        user.email,
         "display_name": user.display_name,
-        "avatar_url":   user.avatar_url,
+        "avatar_emoji":   user.avatar_emoji,
         "added_at":     added_at,
         "balance":      balance,
     }

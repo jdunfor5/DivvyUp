@@ -54,7 +54,7 @@ Register a new account. No auth required.
   "id": "uuid",
   "email": "user@example.com",
   "display_name": "Jane",
-  "avatar_url": null,
+  "avatar_emoji": "😀",
   "phone": null,
   "venmo_handle": null,
   "paypal_email": null,
@@ -87,7 +87,7 @@ Only include fields you want to change.
 ```json
 {
   "display_name": "Jane Smith",
-  "avatar_url": "https://...",
+  "avatar_emoji": "🥸",
   "phone": "+1234567890",
   "venmo_handle": "janesmith",
   "paypal_email": "jane@paypal.com",
@@ -658,7 +658,7 @@ List all your friends with balances. **Auth required.**
     "id": "uuid",
     "email": "friend@example.com",
     "display_name": "Alex",
-    "avatar_url": null,
+    "avatar_emoji": "🤫",
     "added_at": "2026-04-07T...",
     "balance": "20.00"
   }
