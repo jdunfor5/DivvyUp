@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
-import { getToken, getCurrentUser, clearToken, getGroups, createGroup } from './api'
+import { getToken, getCurrentUser, clearToken, getGroups, createGroup, deleteGroup, joinGroup } from './api'
 import './App.css'
 
 function App() {
@@ -12,17 +12,25 @@ function App() {
   const [friendsOpen, setFriendsOpen] = useState(true)
   const [creatingGroup, setCreatingGroup] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
+  const [joiningGroup, setJoiningGroup] = useState(false)
+  const [inviteCode, setInviteCode] = useState('')
 
   // On load, restore session from stored token
   useEffect(() => {
-    if (getToken()) {
-      getCurrentUser()
-        .then(setCurrentUser)
-        .catch(() => clearToken())
-        .finally(() => setAuthChecked(true))
-    } else {
+    const checkAuth = async () => {
+      if (getToken()) {
+        try {
+          const user = await getCurrentUser()
+          setCurrentUser(user)
+        } catch (err) {
+          console.error('Auth check failed:', err)
+          clearToken()
+        }
+      }
       setAuthChecked(true)
     }
+    
+    checkAuth()
   }, [])
 
   useEffect(() => {
@@ -49,6 +57,30 @@ function App() {
       loadGroups()
     } catch (err) {
       alert('Failed to create group: ' + err.message)
+    }
+  }
+
+  async function handleDeleteGroup(groupId) {
+    if (!confirm('Are you sure you want to delete this group? This action cannot be undone.')) {
+      return
+    }
+    try {
+      await deleteGroup(groupId)
+      loadGroups()
+    } catch (err) {
+      alert('Failed to delete group: ' + err.message)
+    }
+  }
+
+  async function handleJoinGroup() {
+    if (!inviteCode.trim()) return
+    try {
+      await joinGroup(inviteCode)
+      setInviteCode('')
+      setJoiningGroup(false)
+      loadGroups()
+    } catch (err) {
+      alert('Failed to join group: ' + err.message)
     }
   }
 
@@ -90,7 +122,30 @@ function App() {
                     <li key={g.id} className="dropdown-item">
                       <span className="item-avatar group-avatar">{g.name[0]}</span>
                       <span className="item-label">{g.name}</span>
-                      <span className="item-count">{g.members?.length || 1}</span>
+                      <div className="item-actions">
+                        <span className="item-count">{g.members?.length || 1}</span>
+                        <button 
+                          className="btn-share" 
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigator.clipboard.writeText(g.invite_code)
+                            alert(`Invite code copied: ${g.invite_code}`)
+                          }}
+                          title="Copy invite code"
+                        >
+                          📋
+                        </button>
+                        <button 
+                          className="btn-delete" 
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteGroup(g.id)
+                          }}
+                          title="Delete group"
+                        >
+                          🗑️
+                        </button>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -108,6 +163,21 @@ function App() {
                   </div>
                 ) : (
                   <button className="add-group-btn" onClick={() => setCreatingGroup(true)}>+ Add Group</button>
+                )}
+                {joiningGroup ? (
+                  <div className="create-group-form">
+                    <input
+                      type="text"
+                      placeholder="Enter invite code"
+                      value={inviteCode}
+                      onChange={e => setInviteCode(e.target.value)}
+                      onKeyPress={e => e.key === 'Enter' && handleJoinGroup()}
+                    />
+                    <button onClick={handleJoinGroup}>Join</button>
+                    <button onClick={() => setJoiningGroup(false)}>Cancel</button>
+                  </div>
+                ) : (
+                  <button className="add-group-btn" onClick={() => setJoiningGroup(true)}>Join Group</button>
                 )}
               </div>
             )}
@@ -141,9 +211,6 @@ function App() {
         <div className="sidebar-bottom">
           <button className="btn-add">
             <span>+</span> Add Friend
-          </button>
-          <button className="btn-add btn-add--group">
-            <span>+</span> Add Group
           </button>
           <div style={{ marginTop: '1rem', fontSize: '0.8rem', color: '#aaa', textAlign: 'center' }}>
             {currentUser.display_name}

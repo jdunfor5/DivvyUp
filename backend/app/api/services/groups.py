@@ -5,7 +5,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
-from ...models.user import UserRead
+from ...models.user import User, UserRead
 from ...models.group import Group, GroupCreate, GroupUpdate, GroupMember, GroupMemberRole
 from ...models.expense import Expense, ExpenseSplit
 from ...models.settlement import Settlement, PaymentStatus
@@ -126,9 +126,24 @@ async def read_group_members(db: AsyncSession, current_user: UserRead, group_uui
         if not member_result.scalar_one_or_none():
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not a member of this group.")
 
-        statement = select(GroupMember).where(GroupMember.group_id == group_uuid)
+        statement = (
+            select(GroupMember, User.display_name, User.email, User.avatar_emoji)
+            .join(User, User.id == GroupMember.user_id)
+            .where(GroupMember.group_id == group_uuid)
+        )
         result = await db.execute(statement)
-        group_members = result.scalars().all()
+        rows = result.all()
+        group_members = []
+        for member, display_name, email, avatar_emoji in rows:
+            group_members.append({
+                "group_id": member.group_id,
+                "user_id": member.user_id,
+                "role": member.role,
+                "joined_at": member.joined_at,
+                "display_name": display_name,
+                "email": email,
+                "avatar_emoji": avatar_emoji,
+            })
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)

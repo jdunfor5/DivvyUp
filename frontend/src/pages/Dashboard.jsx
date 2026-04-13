@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import SummaryCard from '../components/SummaryCard'
 import TransactionList from '../components/TransactionList'
-import BudgetCategories from '../components/BudgetCategories'
 import GroupMembers from '../components/GroupMembers'
-import { getExpenses, getGroupBalances, getGroupMembers, createExpense } from '../api'
+import Settlements from '../components/Settlements'
+import { getExpenses, getGroupBalances, getGroupMembers, createExpense, getCurrentUser, getSettlements, createSettlement, confirmSettlement, cancelSettlement, removeMember, transferAdmin, leaveGroup } from '../api'
 import './Dashboard.css'
 
 function Dashboard({ groups = [] }) {
@@ -11,8 +11,14 @@ function Dashboard({ groups = [] }) {
   const [expenses, setExpenses] = useState([])
   const [balances, setBalances] = useState([])
   const [members, setMembers] = useState([])
+  const [settlements, setSettlements] = useState([])
+  const [currentUser, setCurrentUser] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  useEffect(() => {
+    getCurrentUser().then(setCurrentUser).catch(console.error)
+  }, [])
 
   useEffect(() => {
     if (groups.length > 0 && !selectedGroup) {
@@ -27,20 +33,23 @@ function Dashboard({ groups = [] }) {
       setExpenses([])
       setBalances([])
       setMembers([])
+      setSettlements([])
     }
   }, [selectedGroup])
 
   async function loadGroupData(groupId) {
     setLoading(true)
     try {
-      const [expData, balData, memData] = await Promise.all([
+      const [expData, balData, memData, setData] = await Promise.all([
         getExpenses(groupId),
         getGroupBalances(groupId),
         getGroupMembers(groupId),
+        getSettlements(groupId),
       ])
       setExpenses(expData)
       setBalances(balData)
       setMembers(memData)
+      setSettlements(setData)
       setError(null)
     } catch (err) {
       setError(err.message)
@@ -77,6 +86,99 @@ function Dashboard({ groups = [] }) {
     }
   }
 
+  async function handleSettlePayment(member) {
+    if (!selectedGroup) return
+
+    if (member.owes >= 0) {
+      alert('This member owes you money. Ask them to record the payment from their account, then confirm it in Settlements.')
+      return
+    }
+
+    const maxAmount = Math.abs(member.owes)
+    const amount = parseFloat(prompt(`Enter payment amount (max: $${maxAmount.toFixed(2)}):`))
+    
+    if (Number.isNaN(amount) || amount <= 0) return
+    if (amount > maxAmount) {
+      alert(`Amount cannot exceed $${maxAmount.toFixed(2)}`)
+      return
+    }
+
+    const provider = prompt('Payment method (cash, venmo, paypal, other):') || 'cash'
+    const note = prompt('Optional note:') || null
+
+    try {
+      await createSettlement(selectedGroup.id, member.id, {
+        amount,
+        currency: 'USD',
+        provider,
+        note,
+      })
+      alert('Payment recorded! The recipient will need to confirm it.')
+      loadGroupData(selectedGroup.id)
+    } catch (err) {
+      alert('Failed to record payment: ' + err.message)
+    }
+  }
+
+  async function handleConfirmSettlement(settlementId) {
+    if (!selectedGroup) return
+    try {
+      await confirmSettlement(selectedGroup.id, settlementId)
+      loadGroupData(selectedGroup.id)
+    } catch (err) {
+      alert('Failed to confirm settlement: ' + err.message)
+    }
+  }
+
+  async function handleCancelSettlement(settlementId) {
+    if (!selectedGroup) return
+    if (!confirm('Are you sure you want to cancel this settlement?')) return
+    try {
+      await cancelSettlement(selectedGroup.id, settlementId)
+      loadGroupData(selectedGroup.id)
+    } catch (err) {
+      alert('Failed to cancel settlement: ' + err.message)
+    }
+  }
+
+  async function handleRemoveMember(userId){
+    if (!selectedGroup) return
+    if (!confirm('Remove this member from the group?')) return
+    try {
+      await removeMember(selectedGroup.id, userId)
+      loadGroupData(selectedGroup.id)
+    } catch (err) {
+      alert('Failed to remove member: ' + err.message)
+    }
+  }
+
+  async function handleTransferAdmin(userId){
+    if (!selectedGroup) return
+    if (!confirm('Transfer admin to this member? You will become a regular member')) return
+    try {
+      await transferAdmin(selectedGroup.id, userId)
+      loadGroupData(selectedGroup.id)
+    } catch (err) {
+      alert('Failed to transfer admin: ' + err.message)
+    }
+  }
+
+  async function handleLeaveGroup(){
+    if (!selectedGroup) return
+    if (!confirm('Are you sure you want to leave this group?')) return
+    try {
+      await leaveGroup(selectedGroup.id)
+      setSelectedGroup(null)
+      loadGroupData(selectedGroup.id)
+    } catch (err) {
+      if (err.message.includes('Admin')){
+        alert('Failed to leave group: there needs to be an admin in the group. Transfer admin to someone else first.')
+      } else {
+        alert('Failed to leave group: ' + err.message)
+      }
+    }
+  }
+
   if (!groups.length) {
     return (
       <div className="dashboard">
@@ -100,22 +202,50 @@ function Dashboard({ groups = [] }) {
     amount: Number(exp.amount) * -1,
     date: new Date(exp.expense_date).toISOString().split('T')[0],
     category: 'Misc',
+    paidByName: exp.paid_by_name || null,
   }))
 
-  const mockBudgets = [
-    { category: 'Food', spent: 121.82, limit: 300 },
-    { category: 'Entertainment', spent: 15.99, limit: 50 },
-    { category: 'Transport', spent: 52.10, limit: 150 },
-    { category: 'Shopping', spent: 0, limit: 200 },
-  ]
+  const transformedMembers = members.map(mem => {
+    const balance = balances.find(b => b.user_id === mem.user_id)?.net_balance || 0
+    const paymentsToYou = settlements
+      .filter(s => s.payer_id === mem.user_id && s.payee_id === currentUser?.id && s.status === 'completed')
+      .reduce((sum, s) => sum + Number(s.amount), 0)
+    const paymentsFromYou = settlements
+      .filter(s => s.payer_id === currentUser?.id && s.payee_id === mem.user_id && s.status === 'completed')
+      .reduce((sum, s) => sum + Number(s.amount), 0)
 
-  const transformedMembers = members.map(mem => ({
-    id: mem.user_id,
-    name: mem.display_name || 'Member',
-    initials: (mem.display_name || 'M').split(' ').map(n => n[0]).join('').toUpperCase(),
-    owes: balances.find(b => b.user_id === mem.user_id)?.net_balance || 0,
-    isYou: false,
-  }))
+    const isYou = mem.user_id === currentUser?.id
+    const isAdmin = mem.role === 'admin'
+    const displayName = isYou ? 'You' : (mem.display_name || 'Friend')
+    const initialsSource = isYou ? 'You' : (mem.display_name || 'Friend')
+
+    return {
+      id: mem.user_id,
+      name: displayName,
+      initials: initialsSource.split(' ').map(n => n[0]).join('').toUpperCase(),
+      owes: Number(balance),
+      paymentsToYou,
+      paymentsFromYou,
+      canSettle: Number(balance) > 0,
+      isYou,
+      isAdmin,
+    }
+  })
+
+  // Calculate summary values
+  const currentMonth = new Date().getMonth()
+  const currentYear = new Date().getFullYear()
+  
+  const monthlyExpenses = expenses
+    .filter(exp => {
+      const expDate = new Date(exp.expense_date)
+      return expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear
+    })
+    .reduce((sum, exp) => sum + Number(exp.amount), 0)
+
+  const userBalance = balances.find(b => b.user_id === currentUser?.id)?.net_balance || 0
+  const groupOwesYou = Math.max(0, Number(userBalance))
+  const currentUserIsAdmin = members.find(m => m.user_id === currentUser?.id)?.role === 'admin'
 
   return (
     <div className="dashboard">
@@ -139,10 +269,10 @@ function Dashboard({ groups = [] }) {
       </div>
 
       <div className="summary-cards">
-        <SummaryCard title="Total Balance" amount={2841.09} type="balance" />
-        <SummaryCard title="Monthly Income" amount={1200.00} type="income" />
-        <SummaryCard title="Monthly Expenses" amount={189.91} type="expense" />
-        <SummaryCard title="Group Owes You" amount={33.25} type="owed" />
+        <SummaryCard title="Total Balance" amount={Number(userBalance)} type="balance" />
+        <SummaryCard title="Monthly Income" amount={0} type="income" />
+        <SummaryCard title="Monthly Expenses" amount={monthlyExpenses} type="expense" />
+        <SummaryCard title="Group Owes You" amount={groupOwesYou} type="owed" />
       </div>
 
       <div className="dashboard-grid">
@@ -150,8 +280,21 @@ function Dashboard({ groups = [] }) {
           <TransactionList transactions={transactions} />
         </div>
         <div className="grid-right">
-          <BudgetCategories budgets={mockBudgets} />
-          <GroupMembers members={transformedMembers} />
+          <GroupMembers
+            members = {transformedMembers}
+            currentUser={currentUser}
+            isAdmin={currentUserIsAdmin}
+            onSettlePayment={handleSettlePayment}
+            onRemoveMember={handleRemoveMember}
+            onTransferAdmin={handleTransferAdmin}
+            onLeaveGroup={handleLeaveGroup}
+            />
+          <Settlements 
+            settlements={settlements} 
+            currentUserId={currentUser?.id}
+            onConfirmSettlement={handleConfirmSettlement}
+            onCancelSettlement={handleCancelSettlement}
+          />
         </div>
       </div>
     </div>

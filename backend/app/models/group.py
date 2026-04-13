@@ -81,6 +81,9 @@ class GroupMemberRead(BaseModel):
     user_id: uuid.UUID
     role: GroupMemberRole
     joined_at: datetime
+    display_name: Optional[str] = None
+    email: Optional[str] = None
+    avatar_emoji: Optional[str] = None
 
     class Config:
         from_attributes = True

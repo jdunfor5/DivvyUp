@@ -7,7 +7,6 @@ from sqlalchemy.dialects.postgresql import UUID
 from pydantic import BaseModel, EmailStr
 from app.dependencies.database import Base
 
-
 # ── SQLAlchemy Model ──────────────────────────────────────────
 
 class User(Base):
@@ -17,7 +16,7 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String, nullable=False)
     display_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    avatar_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    avatar_emoji: Mapped[str] = mapped_column(String(4), nullable=False, default="💩")
     phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     venmo_handle: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     paypal_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
@@ -33,6 +32,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     display_name: str
+    avatar_emoji: str
     phone: Optional[str] = None
     base_currency: str = "USD"
 
@@ -42,7 +42,7 @@ class UserRead(BaseModel):
     id: uuid.UUID
     email: str
     display_name: str
-    avatar_url: Optional[str]
+    avatar_emoji: str
     phone: Optional[str]
     venmo_handle: Optional[str]
     paypal_email: Optional[str]
@@ -56,7 +56,7 @@ class UserRead(BaseModel):
 class UserUpdate(BaseModel):
     """All fields optional for PATCH requests."""
     display_name: Optional[str] = None
-    avatar_url: Optional[str] = None
+    avatar_emoji: Optional[str] = None
     phone: Optional[str] = None
     venmo_handle: Optional[str] = None
     paypal_email: Optional[str] = None
