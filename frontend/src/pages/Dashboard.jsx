@@ -183,7 +183,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
         <div className="dashboard-header">
           <div>
             <h1>Dashboard</h1>
-            <p className="dashboard-date">February 2026</p>
+            <p className="dashboard-date"><span id="display-month">{currentMonthName}</span></p>
           </div>
         </div>
         <div>Please create a group first from the sidebar.</div>
@@ -231,6 +231,12 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
     }
   })
 
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ]
+  const currentMonthName = monthNames[new Date().getMonth()]
+
   // Calculate summary values
   const currentMonth = new Date().getMonth()
   const currentYear = new Date().getFullYear()
@@ -251,7 +257,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
       <div className="dashboard-header">
         <div>
           <h1>{selectedGroup?.name || 'Dashboard'}</h1>
-          <p className="dashboard-date">February 2026</p>
+          <p className="dashboard-date"><span id="display-month">{currentMonthName}</span></p>
         </div>
         <button className="btn-primary" onClick={handleAddTransaction}>+ Add Transaction</button>
       </div>

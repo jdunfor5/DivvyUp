@@ -116,8 +116,8 @@
 
 .btn-comment-toggle {
   border: none;
-  background: #dcfce7;
-  color: #166534;
+  background: #fcdcdc;
+  color: #651616;
   padding: 6px 10px;
   border-radius: 999px;
   cursor: pointer;
@@ -125,7 +125,7 @@
 }
 
 .btn-comment-toggle:hover {
-  background: #bbf7d0;
+  background: #f7bbbb;
 }
 
 .btn-comment-submit {
