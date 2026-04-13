@@ -154,6 +154,10 @@ body {
   background: var(--accent-light);
 }
 
+.dropdown-item.active {
+  background: rgba(197, 34, 34, 0.12);
+}
+
 .item-avatar {
   width: 28px;
   height: 28px;
