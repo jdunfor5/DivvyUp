@@ -1,13 +1,13 @@
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
       :root {
-        --green-50:  #E1F5EE;
-        --green-100: #9FE1CB;
-        --green-200: #5DCAA5;
-        --green-400: #1D9E75;
-        --green-600: #0F6E56;
-        --green-800: #085041;
-        --green-900: #04342C;
+        --green-50:  #F2E5E7;
+        --green-100: #D9B4B8;
+        --green-200: #BF8087;
+        --green-400: #9A4F59;
+        --green-600: #7D323F;
+        --green-800: #66232E;
+        --green-900: #4B1720;
         --text:      #1a1a18;
         --text-2:    #4a4a46;
         --text-3:    #888780;
@@ -74,7 +74,7 @@
       }
       .hero-blob.b1 { width: 500px; height: 500px; top: -200px; left: -100px; }
       .hero-blob.b2 { width: 350px; height: 350px; bottom: -120px; right: -80px; }
-      .hero-blob.b3 { width: 200px; height: 200px; top: 40px; right: 20%; background: rgba(29,158,117,0.25); }
+      .hero-blob.b3 { width: 200px; height: 200px; top: 40px; right: 20%; background: rgba(154,79,89,0.22); }
 
       .hero-eyebrow {
         display: inline-flex; align-items: center; gap: 6px;
@@ -158,7 +158,7 @@
         border-top: 0.5px solid rgba(255,255,255,0.12);
       }
       .preview-balance-label { font-size: 12px; color: rgba(255,255,255,0.5); }
-      .preview-balance-value { font-size: 15px; font-weight: 600; color: #5DCAA5; }
+      .preview-balance-value { font-size: 15px; font-weight: 600; color: var(--green-200); }
 
       /* ── STATS ──────────────────────────────── */
       .stats-strip {
@@ -208,8 +208,8 @@
         display: flex; align-items: center; justify-content: center;
         font-size: 10px; font-weight: 600;
       }
-      .av-a { background: #E1F5EE; color: #085041; }
-      .av-b { background: #E6F1FB; color: #0C447C; }
+      .av-a { background: #F2E5E7; color: #66232E; }
+      .av-b { background: #F5E7EA; color: #5A2A3A; }
       .av-c { background: #FAEEDA; color: #633806; }
       .av-d { background: #FBEAF0; color: #72243E; }
       .ledger-name { font-weight: 500; color: var(--text); }
