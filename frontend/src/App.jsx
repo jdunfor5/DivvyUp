@@ -66,11 +66,12 @@ function App() {
     if (!newGroupName.trim()) return
     try {
       await createGroup({ name: newGroupName })
+      showToast(`Successfully created ${newGroupName}.`, "success")
       setNewGroupName('')
       setCreatingGroup(false)
       loadGroups()
     } catch (err) {
-      alert('Failed to create group: ' + err.message)
+      showToast(`Failed to create group. See: ${err.message}`, "error")
     }
   }
 
@@ -81,8 +82,9 @@ function App() {
     try {
       await deleteGroup(groupId)
       loadGroups()
+      showToast("Successfully deleted group.", "success")
     } catch (err) {
-      alert('Failed to delete group: ' + err.message)
+      showToast(`Failed to delete group. See: ${err.message}`, "error")
     }
   }
 
@@ -90,20 +92,26 @@ function App() {
     if (!inviteCode.trim()) return
     try {
       await joinGroup(inviteCode)
+      showToast(`Successfully joined group ${inviteCode}.`, "success")
       setInviteCode('')
       setJoiningGroup(false)
       loadGroups()
     } catch (err) {
-      alert('Failed to join group: ' + err.message)
+      showToast(`Failed to join group. See: ${err.message}`, "error")
     }
   }
 
   async function copyInviteCode(code) {
     try {
       await navigator.clipboard.writeText(code)
+      showToast(`Successfully copied group invite code: ${code}.`, "success")
     } catch (err) {
-      console.error('Copy failed:', err)
+      showToast(`Failed to copy group. See: ${err.message}`, "error")
     }
+  }
+
+  function handleProfileUpdate() {
+    alert("TODO: requested profile update form.")
   }
 
   function handleLogout() {
@@ -119,6 +127,28 @@ function App() {
 
   if (!authChecked) return null
   if (!currentUser) return <Login onLogin={setCurrentUser} />
+
+  function showToast(message, type = "success") {
+    let toast = document.getElementById("global-toast");
+
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.id = "global-toast";
+      toast.className = "toast";
+      document.body.appendChild(toast);
+    }
+
+    toast.className = "toast";
+
+    toast.classList.add(`toast-${type}`);
+
+    toast.textContent = message;
+    toast.classList.add("show");
+
+    setTimeout(() => {
+      toast.classList.remove("show");
+    }, 1500);
+  }
 
   return (
     <div className="app">
@@ -240,13 +270,13 @@ function App() {
         {/* Bottom buttons */}
         <div className="sidebar-bottom">
           <button className="btn-add">
-            <span>+</span> Add Friend
+            <span id="friend-icon"></span>Add Friend
           </button>
-          <div style={{ marginTop: '1rem', fontSize: '0.8rem', color: '#aaa', textAlign: 'center' }}>
-            {currentUser.display_name}
-          </div>
+          <button className="btn-add" onClick={handleProfileUpdate}>
+            <span id="profile-icon"></span>{currentUser.display_name}
+          </button>
           <button className="btn-add" onClick={handleLogout} style={{ marginTop: '0.25rem', background: '#fee2e2', color: '#dc2626' }}>
-            Sign out
+            <span id="logout-icon"></span>Sign Out
           </button>
         </div>
       </nav>

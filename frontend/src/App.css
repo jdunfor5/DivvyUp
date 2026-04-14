@@ -333,8 +333,8 @@ body {
   width: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  justify-content: flex-start;
+  gap: 10px;
   padding: 9px 16px;
   border-radius: 10px;
   border: 1.5px dashed var(--accent);
@@ -344,7 +344,13 @@ body {
   font-weight: 700;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.15s, border-style 0.15s;
+  transition: background 0.15s
+}
+
+.btn-add span {
+  display: inline-flex;
+  width: 22px;
+  justify-content: center;
 }
 
 .btn-add:hover {
@@ -360,6 +366,30 @@ body {
 .btn-add--group:hover {
   background: #e0e7ff;
   border-style: solid;
+}
+
+.btn-add #friend-icon::after {
+  content: "🗣️";
+}
+
+.btn-add:hover #friend-icon::after {
+  content: "🫂";
+}
+
+.btn-add #profile-icon::after {
+  content: "👤";
+}
+
+.btn-add:hover #profile-icon::after {
+  content: "✏️";
+}
+
+.btn-add #logout-icon::after {
+  content: "😶‍🌫️";
+}
+
+.btn-add:hover #logout-icon::after {
+  content: "💀";
 }
 
 /* ── Main content ── */
@@ -422,4 +452,46 @@ body {
   padding: 0;
 }
 
-.btn-link:hover { text-decoration: underline; }
+.btn-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Toast ── */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 18px;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 9999;
+}
+
+.toast-success {
+  background: #4ade80;
+  color: #064e3b;
+}
+
+.toast-error {
+  background: #f87171;
+  color: #7f1d1d;
+}
+
+.toast-warning {
+  background: #fb923c;
+  color: #7c2d12;
+}
+
+.toast-info {
+  background: #60a5fa;
+  color: #1e3a8a;
+}
+
+.toast.show {
+  opacity: 1;
+}
