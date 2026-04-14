@@ -209,8 +209,11 @@ List all members of a group. **Auth required. Must be a member.**
   {
     "group_id": "uuid",
     "user_id": "uuid",
-    "role": "admin",       // "admin" | "member"
-    "joined_at": "2026-04-07T..."
+    "role": "admin",
+    "joined_at": "2026-04-07T...",
+    "display_name": "Jane",
+    "email": "jane@example.com",
+    "avatar_url": null
   }
 ]
 ```
@@ -248,24 +251,53 @@ All expense endpoints require group membership.
 ### POST /groups/{group_uuid}/expenses/
 Create an expense. **Auth required. Must be a member.**
 
-The current user is set as `paid_by`. Splits are calculated automatically (equal split, remainder goes to payer).
+The current user is set as `paid_by`. Splits are calculated automatically based on `split_type`.
 
-**Request**
+#### Split types
+
+**`equal`** (default) — divide evenly among all non-payer members. No extra fields needed.
 ```json
 {
   "description": "Dinner",
   "amount": "60.00",
-  "currency": "USD",
   "base_amount": "60.00",
-  "exchange_rate": "1",
-  "category_id": 1,
-  "split_type": "equal",
   "expense_date": "2026-04-07",
-  "notes": "Thai place downtown"  // optional
+  "split_type": "equal"
+}
+```
+
+**`exact`** — specify each non-payer's exact dollar amount. Amounts must sum to `base_amount`.
+```json
+{
+  "description": "Dinner",
+  "amount": "60.00",
+  "base_amount": "60.00",
+  "expense_date": "2026-04-07",
+  "split_type": "exact",
+  "member_splits": [
+    { "user_id": "<uuid>", "amount": "40.00" },
+    { "user_id": "<uuid>", "amount": "20.00" }
+  ]
+}
+```
+
+**`percentage`** — specify each non-payer's share as a percentage. Percentages must sum to 100.
+```json
+{
+  "description": "Dinner",
+  "amount": "60.00",
+  "base_amount": "60.00",
+  "expense_date": "2026-04-07",
+  "split_type": "percentage",
+  "member_splits": [
+    { "user_id": "<uuid>", "percentage": "66.67" },
+    { "user_id": "<uuid>", "percentage": "33.33" }
+  ]
 }
 ```
 
 > `amount` is the original currency amount. `base_amount` is the converted USD amount used for balance math. If no currency conversion, they are the same.
+> `exchange_rate` (default `1`), `category_id` (default `1`), and `notes` are all optional.
 
 **Response** — `ExpenseRead`
 ```json
@@ -273,6 +305,7 @@ The current user is set as `paid_by`. Splits are calculated automatically (equal
   "id": "uuid",
   "group_id": "uuid",
   "paid_by": "uuid",
+  "paid_by_name": "Jane",
   "description": "Dinner",
   "amount": "60.00",
   "currency": "USD",
@@ -288,7 +321,7 @@ The current user is set as `paid_by`. Splits are calculated automatically (equal
 
 ### GET /groups/{group_uuid}/expenses/
 List all active expenses in a group. **Auth required. Must be a member.**
-Soft-deleted expenses are excluded.
+Soft-deleted expenses are excluded. Each expense includes `paid_by_name`.
 
 **Response** — `list[ExpenseRead]`
 
@@ -318,7 +351,7 @@ Get how an expense is split across members. **Auth required. Must be a member.**
 ### PATCH /groups/{group_uuid}/expenses/{expense_uuid}
 Update an expense. **Auth required. Creator or group admin only.**
 
-> If `base_amount` is included, splits are automatically recalculated.
+> Splits are automatically recalculated if `base_amount`, `split_type`, or `member_splits` is included in the request.
 
 **Request** — any subset of:
 ```json
@@ -329,9 +362,13 @@ Update an expense. **Auth required. Creator or group admin only.**
   "currency": "USD",
   "exchange_rate": "1",
   "category_id": 2,
-  "split_type": "equal",
+  "split_type": "exact",
   "expense_date": "2026-04-07",
-  "notes": "Updated note"
+  "notes": "Updated note",
+  "member_splits": [
+    { "user_id": "<uuid>", "amount": "50.00" },
+    { "user_id": "<uuid>", "amount": "25.00" }
+  ]
 }
 ```
 

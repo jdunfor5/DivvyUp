@@ -342,9 +342,10 @@ async def get_balances(db: AsyncSession, current_user: UserRead, group_uuid: UUI
         members_result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid))
         members = members_result.scalars().all()
 
-        balances: dict = defaultdict(Decimal)
-        for m in members:
-            balances[m.user_id] = Decimal("0")
+        # Pairwise balances: how much current_user is owed by (or owes) each other member.
+        # Positive = that member owes current_user. Negative = current_user owes that member.
+        me = current_user.id
+        balances: dict = {m.user_id: Decimal("0") for m in members if m.user_id != me}
 
         splits_result = await db.execute(
             select(ExpenseSplit, Expense.paid_by)
@@ -352,9 +353,18 @@ async def get_balances(db: AsyncSession, current_user: UserRead, group_uuid: UUI
             .where(Expense.group_id == group_uuid, Expense.is_deleted == False)
         )
         for split, paid_by in splits_result.all():
-            if split.user_id != paid_by:
-                balances[paid_by] += split.share_amount
-                balances[split.user_id] -= split.share_amount
+            debtor = split.user_id
+            creditor = paid_by
+            if debtor == creditor:
+                continue
+
+            # Only process splits that involve current_user on one side
+            if creditor == me and debtor in balances:
+                # Someone owes me — their balance goes negative (they owe me)
+                balances[debtor] -= split.share_amount
+            elif debtor == me and creditor in balances:
+                # I owe someone — their balance goes positive (I owe them)
+                balances[creditor] += split.share_amount
 
         settlements_result = await db.execute(
             select(Settlement).where(
@@ -363,8 +373,11 @@ async def get_balances(db: AsyncSession, current_user: UserRead, group_uuid: UUI
             )
         )
         for s in settlements_result.scalars().all():
-            balances[s.payer_id] += s.amount
-            balances[s.payee_id] -= s.amount
+            # A completed settlement reduces what the payer owes the payee
+            if s.payer_id == me and s.payee_id in balances:
+                balances[s.payee_id] -= s.amount
+            elif s.payee_id == me and s.payer_id in balances:
+                balances[s.payer_id] += s.amount
 
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])

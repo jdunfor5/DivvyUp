@@ -4,7 +4,8 @@ from fastapi import HTTPException, status
 from sqlalchemy import select, delete as sa_delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
-from ...models.expense import Expense, ExpenseCreate, ExpenseUpdate, ExpenseSplit
+from ...models.expense import Expense, ExpenseCreate, ExpenseUpdate, ExpenseSplit, MemberSplit
+from ...models.recurring import SplitType
 from ...models.group import GroupMember, GroupMemberRole
 from ...models.user import User, UserRead
 
@@ -40,7 +41,7 @@ async def create(db: AsyncSession, current_user: UserRead, group_uuid: UUID, req
         if not members:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No members found in group.")
 
-        db.add_all(_build_splits(new_expense.id, members, request.base_amount, current_user.id))
+        db.add_all(_build_splits(new_expense.id, members, request.base_amount, current_user.id, request.split_type, request.member_splits))
         await db.commit()
     except SQLAlchemyError as e:
         error = str(e.__dict__["orig"])
@@ -126,15 +127,15 @@ async def update(db: AsyncSession, current_user: UserRead, group_uuid: UUID, exp
         if not is_creator and not is_admin:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the expense creator or a group admin can update this expense.")
 
-        patch = request.model_dump(exclude_unset=True)
+        patch = request.model_dump(exclude_unset=True, exclude={"member_splits"})
         for field, value in patch.items():
             setattr(expense, field, value)
 
-        if "base_amount" in patch:
+        if "base_amount" in patch or "split_type" in patch or "member_splits" in patch:
             await db.execute(sa_delete(ExpenseSplit).where(ExpenseSplit.expense_id == expense_uuid))
             members_result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid))
             members = members_result.scalars().all()
-            db.add_all(_build_splits(expense.id, members, expense.base_amount, expense.paid_by))
+            db.add_all(_build_splits(expense.id, members, expense.base_amount, expense.paid_by, expense.split_type, request.member_splits))
 
         await db.commit()
         await db.refresh(expense)
@@ -171,28 +172,48 @@ async def delete(db: AsyncSession, current_user: UserRead, group_uuid: UUID, exp
     return None
 
 
-def _build_splits(expense_id: UUID, members: list, base_amount: Decimal, payer_id: UUID) -> list:
+def _build_splits(
+    expense_id: UUID,
+    members: list,
+    base_amount: Decimal,
+    payer_id: UUID,
+    split_type: SplitType = SplitType.equal,
+    member_splits: list[MemberSplit] | None = None,
+) -> list:
     if len(members) < 2:
         raise ValueError("Group must have at least 2 members to split an expense.")
 
     base = Decimal(str(base_amount)).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-    num_debtors = len(members) - 1
-    share = (base / num_debtors).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-    remainder = base - (share * num_debtors)
-
     splits = []
-    for member in members:
-        if member.user_id == payer_id:
-            member_share = Decimal("0.00")
-        else:
-            member_share = share
-            if remainder > 0:
-                member_share += remainder
-                remainder = Decimal("0.00")
 
-        splits.append(ExpenseSplit(
-            expense_id   = expense_id,
-            user_id      = member.user_id,
-            share_amount = member_share,
-        ))
+    if split_type == SplitType.equal:
+        num_debtors = len(members) - 1
+        share = (base / num_debtors).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+        remainder = base - (share * num_debtors)
+        for member in members:
+            if member.user_id == payer_id:
+                member_share = Decimal("0.00")
+            else:
+                member_share = share
+                if remainder > 0:
+                    member_share += remainder
+                    remainder = Decimal("0.00")
+            splits.append(ExpenseSplit(expense_id=expense_id, user_id=member.user_id, share_amount=member_share))
+
+    elif split_type == SplitType.exact:
+        lookup = {s.user_id: (s.amount or Decimal("0")).quantize(Decimal("0.01"), rounding=ROUND_DOWN) for s in (member_splits or [])}
+        for member in members:
+            member_share = Decimal("0.00") if member.user_id == payer_id else lookup.get(member.user_id, Decimal("0.00"))
+            splits.append(ExpenseSplit(expense_id=expense_id, user_id=member.user_id, share_amount=member_share))
+
+    elif split_type == SplitType.percentage:
+        lookup = {s.user_id: s.percentage or Decimal("0") for s in (member_splits or [])}
+        for member in members:
+            if member.user_id == payer_id:
+                member_share = Decimal("0.00")
+            else:
+                pct = lookup.get(member.user_id, Decimal("0"))
+                member_share = (base * pct / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+            splits.append(ExpenseSplit(expense_id=expense_id, user_id=member.user_id, share_amount=member_share))
+
     return splits
