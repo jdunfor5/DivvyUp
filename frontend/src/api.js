@@ -72,7 +72,10 @@ export async function api(path, options = {}) {
     clearTimeout(timeoutId)
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
-      throw new Error(err.detail || `Request failed: ${res.status}`)
+      const detail = Array.isArray(err.detail)
+        ? err.detail.map(e => e.msg).join(', ')
+        : err.detail
+      throw new Error(detail || `Request failed: ${res.status}`)
     }
     if (res.status === 204) return null
     return res.json()
@@ -172,4 +175,9 @@ export async function transferAdmin(groupId, userId){
 
 export async function leaveGroup(groupId){
   return api(`/groups/${groupId}/members`, { method: 'DELETE'})
+}
+
+// Categories
+export async function getCategories() {
+  return api('/categories/')
 }
