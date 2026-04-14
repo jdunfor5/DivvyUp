@@ -23,11 +23,13 @@ function GroupMembers({ members, currentUser, isAdmin, onSettlePayment, onRemove
               </p>
               {!m.isYou && (
                 <div className="member-balance-info">
-                  <p className={`member-balance ${m.owes < 0 ? 'owes-you' : 'you-owe'}`}>
-                    {m.owes < 0
-                      ? `Owes you $${Math.abs(m.owes).toFixed(2)}`
-                      : `You owe $${m.owes.toFixed(2)}`}
-                  </p>
+                  {m.owes !== 0 && (
+                    <p className={`member-balance ${m.owes < 0 ? 'owes-you' : 'you-owe'}`}>
+                      {m.owes < 0
+                        ? `Owes you $${Math.abs(m.owes).toFixed(2)}`
+                        : `You owe $${m.owes.toFixed(2)}`}
+                    </p>
+                  )}
                   {(m.paymentsToYou > 0 || m.paymentsFromYou > 0) && (
                     <div className="member-settlements">
                       {m.paymentsToYou > 0 && (
