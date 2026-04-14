@@ -23,7 +23,7 @@ AsyncSessionLocal = sessionmaker(
 
 
 SEED_CATEGORIES = [
-    {"name": "Misc",            "icon": "📦"},
+    {"name": "Groceries",       "icon": "🛒"},
     {"name": "Food & Drink",    "icon": "🍔"},
     {"name": "Transport",       "icon": "🚗"},
     {"name": "Housing",         "icon": "🏠"},

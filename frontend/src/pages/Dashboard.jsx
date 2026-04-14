@@ -166,6 +166,8 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
     }
   }
 
+  const currentMonthName = new Date().toLocaleString('default', { month: 'long', year: 'numeric' })
+
   if (!groups.length) {
     return (
       <div className="dashboard">
@@ -183,14 +185,16 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
   if (loading) return <div>Loading...</div>
   if (error) return <div>Error: {error}</div>
 
-  const transactions = expenses.map(exp => ({
-    id: exp.id,
-    description: exp.description,
-    amount: Number(exp.amount) * -1,
-    date: new Date(exp.expense_date).toISOString().split('T')[0],
-    category: 'Misc',
-    paidByName: exp.paid_by_name || null,
-  }))
+  const transactions = expenses
+    .map(exp => ({
+      id: exp.id,
+      description: exp.description,
+      amount: Number(exp.amount) * -1,
+      date: new Date(exp.expense_date).toISOString().split('T')[0],
+      category: categories.find(c => c.id === exp.category_id)?.name || 'Misc',
+      paidByName: exp.paid_by_name || null,
+    }))
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
 
   const transformedMembers = members.map(mem => {
     const balance = balances.find(b => b.user_id === mem.user_id)?.net_balance || 0
@@ -203,8 +207,8 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
 
     const isYou = mem.user_id === currentUser?.id
     const isAdmin = mem.role === 'admin'
-    const displayName = isYou ? 'You' : (mem.display_name || 'Friend')
-    const initialsSource = isYou ? 'You' : (mem.display_name || 'Friend')
+    const displayName = isYou ? `${mem.display_name} (You)` : (mem.display_name || 'Friend')
+    const initialsSource = mem.display_name || 'You'
 
     return {
       id: mem.user_id,  
@@ -220,11 +224,10 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
     }
   })
 
-  const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ]
-  const currentMonthName = monthNames[new Date().getMonth()]
+  transformedMembers.sort((a, b) => {
+    if (a.isAdmin !== b.isAdmin) return a.isAdmin ? -1 : 1
+    return a.name.localeCompare(b.name)
+  })
 
   const currentUserIsAdmin = members.find(m => m.user_id === currentUser?.id)?.role === 'admin'
 
@@ -238,7 +241,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
     })
     .reduce((sum, exp) => sum + Number(exp.amount), 0)
 
-  const userBalance = balances.reduce((sum, b) => sum - Number(b.net_balance), 0)
+  const userBalance = Math.max(0, balances.reduce((sum, b) => sum + Number(b.net_balance), 0))
   const groupOwesYou = balances.reduce((sum, b) => sum + Math.max(0, -Number(b.net_balance)), 0)
 
   return (

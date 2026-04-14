@@ -592,7 +592,7 @@ Get all available expense categories. **Auth required.**
 **Response**
 ```json
 [
-  { "id": 1, "name": "Misc",          "icon": "📦" },
+  { "id": 1, "name": "Groceries",      "icon": "🛒" },
   { "id": 2, "name": "Food & Drink",  "icon": "🍔" },
   { "id": 3, "name": "Transport",     "icon": "🚗" },
   { "id": 4, "name": "Housing",       "icon": "🏠" },
