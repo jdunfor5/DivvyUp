@@ -4,6 +4,7 @@ import TransactionList from '../components/TransactionList'
 import GroupMembers from '../components/GroupMembers'
 import Settlements from '../components/Settlements'
 import ExpenseForm from '../components/ExpenseForm'
+import SettlementForm from '../components/SettlementForm'
 import { getExpenses, getGroupBalances, getGroupMembers, createExpense, getCurrentUser, getSettlements, createSettlement, confirmSettlement, cancelSettlement, removeMember, transferAdmin, leaveGroup, getCategories } from '../api'
 import './Dashboard.css'
 
@@ -17,6 +18,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [showExpenseForm, setShowExpenseForm] = useState(false)
+  const [settlementTarget, setSettlementTarget] = useState(null)
 
   const selectedGroup = useMemo(() => {
     if (!groups.length) return null
@@ -73,38 +75,15 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
     loadGroupData(selectedGroup.id)
   }
 
-  async function handleSettlePayment(member) {
+  function handleSettlePayment(member) {
     if (!selectedGroup) return
+    setSettlementTarget(member)
+  }
 
-    if (member.owes <= 0) {
-      alert('This member owes you money. Ask them to record the payment from their account, then confirm it in Settlements.')
-      return
-    }
-
-    const maxAmount = Math.abs(member.owes)
-    const amount = parseFloat(prompt(`Enter payment amount (max: $${maxAmount.toFixed(2)}):`))
-    
-    if (Number.isNaN(amount) || amount <= 0) return
-    if (amount > maxAmount) {
-      alert(`Amount cannot exceed $${maxAmount.toFixed(2)}`)
-      return
-    }
-
-    const provider = prompt('Payment method (cash, venmo, paypal, other):') || 'cash'
-    const note = prompt('Optional note:') || null
-
-    try {
-      await createSettlement(selectedGroup.id, member.id, {
-        amount,
-        currency: 'USD',
-        provider,
-        note,
-      })
-      alert('Payment recorded! The recipient will need to confirm it.')
-      loadGroupData(selectedGroup.id)
-    } catch (err) {
-      alert('Failed to record payment: ' + err.message)
-    }
+  async function handleSettlementSubmit(data) {
+    await createSettlement(selectedGroup.id, settlementTarget.id, data)
+    setSettlementTarget(null)
+    loadGroupData(selectedGroup.id)
   }
 
   async function handleConfirmSettlement(settlementId) {
@@ -277,6 +256,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
           <Settlements
             settlements={settlements}
             currentUserId={currentUser?.id}
+            members={members}
             onConfirmSettlement={handleConfirmSettlement}
             onCancelSettlement={handleCancelSettlement}
           />
@@ -290,6 +270,15 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
           categories={categories}
           onSubmit={handleExpenseSubmit}
           onClose={() => setShowExpenseForm(false)}
+        />
+      )}
+
+      {settlementTarget && (
+        <SettlementForm
+          payee={settlementTarget}
+          maxAmount={settlementTarget.owes}
+          onSubmit={handleSettlementSubmit}
+          onClose={() => setSettlementTarget(null)}
         />
       )}
     </div>

@@ -1,0 +1,119 @@
+.settlement-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settlement-payee {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+.settlement-payee-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent-light);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.settlement-payee-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 2px 0;
+}
+
+.settlement-payee-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.amount-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  transition: border-color 0.15s;
+}
+
+.amount-input-wrap:focus-within {
+  border-color: var(--accent);
+}
+
+.amount-input-wrap input {
+  border: none;
+  outline: none;
+  font-size: 16px;
+  font-family: inherit;
+  font-weight: 600;
+  width: 100%;
+  color: var(--text-primary);
+}
+
+.split-prefix {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.amount-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.provider-options {
+  display: flex;
+  gap: 8px;
+}
+
+.provider-btn {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--white);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--text-secondary);
+}
+
+.provider-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.provider-btn.active {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.label-optional {
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+/* reuse modal, form-group, form-actions, btn-* from ExpenseForm.css */

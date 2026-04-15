@@ -1,6 +1,9 @@
 import './Settlements.css'
 
-function Settlements({ settlements, currentUserId, onConfirmSettlement, onCancelSettlement }) {
+function Settlements({ settlements, currentUserId, members = [], onConfirmSettlement, onCancelSettlement }) {
+  function getMemberName(userId) {
+    return members.find(m => m.user_id === userId)?.display_name || 'Someone'
+  }
   const pendingSettlements = settlements.filter(s => s.status === 'pending')
   const completedSettlements = settlements.filter(s => s.status === 'completed')
 
@@ -27,15 +30,16 @@ function Settlements({ settlements, currentUserId, onConfirmSettlement, onCancel
           <ul className="settlements-list">
             {pendingSettlements.map((settlement) => {
               const isFromYou = settlement.payer_id === currentUserId
-              const otherUser = isFromYou ? settlement.payee_id : settlement.payer_id
-              const action = isFromYou ? 'sent' : 'received'
+              const otherName = isFromYou ? getMemberName(settlement.payee_id) : getMemberName(settlement.payer_id)
+              const description = isFromYou
+                ? `You sent ${otherName} $${settlement.amount}${settlement.provider ? ` via ${settlement.provider}` : ''}`
+                : `${otherName} sent you $${settlement.amount}${settlement.provider ? ` via ${settlement.provider}` : ''}`
 
               return (
                 <li key={settlement.id} className="settlement-item">
                   <div className="settlement-info">
                     <p className="settlement-description">
-                      {isFromYou ? 'You' : 'Someone'} {action} ${settlement.amount} 
-                      {settlement.provider && ` via ${settlement.provider}`}
+                      {description}
                     </p>
                     <p className="settlement-date">
                       {new Date(settlement.created_at).toLocaleDateString()}
@@ -70,14 +74,16 @@ function Settlements({ settlements, currentUserId, onConfirmSettlement, onCancel
           <ul className="settlements-list">
             {completedSettlements.map((settlement) => {
               const isFromYou = settlement.payer_id === currentUserId
-              const action = isFromYou ? 'paid' : 'received'
+              const otherName = isFromYou ? getMemberName(settlement.payee_id) : getMemberName(settlement.payer_id)
+              const description = isFromYou
+                ? `You paid ${otherName} $${settlement.amount}${settlement.provider ? ` via ${settlement.provider}` : ''}`
+                : `${otherName} paid you $${settlement.amount}${settlement.provider ? ` via ${settlement.provider}` : ''}`
 
               return (
                 <li key={settlement.id} className="settlement-item completed">
                   <div className="settlement-info">
                     <p className="settlement-description">
-                      {isFromYou ? 'You' : 'Someone'} {action} ${settlement.amount}
-                      {settlement.provider && ` via ${settlement.provider}`}
+                      {description}
                     </p>
                     <p className="settlement-date">
                       {new Date(settlement.settled_at || settlement.created_at).toLocaleDateString()}
