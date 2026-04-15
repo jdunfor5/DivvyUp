@@ -1,28 +1,4 @@
-databases:
-  - name: divvyup-db
-    databaseName: divvyup
-    user: divvyup_user
-    plan: free
-
 services:
-  - type: web
-    name: divvyup-backend
-    runtime: python
-    rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase:
-          name: divvyup-db
-          property: connectionString
-      - key: SECRET_KEY
-        generateValue: true
-      - key: ENVIRONMENT
-        value: production
-      - key: CORS_ORIGINS
-        sync: false  # Set to: ["https://<your-frontend-name>.onrender.com"]
-
   - type: web
     name: divvyup-frontend
     runtime: static
@@ -31,7 +7,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_URL
-        sync: false  # Set to: https://divvyup-backend.onrender.com
+        sync: false  # Set to your Fly.io backend URL: https://<your-app-name>.fly.dev
     routes:
       - type: rewrite
         source: /*
