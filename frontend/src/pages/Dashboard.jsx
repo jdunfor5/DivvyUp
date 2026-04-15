@@ -3,7 +3,8 @@ import SummaryCard from '../components/SummaryCard'
 import TransactionList from '../components/TransactionList'
 import GroupMembers from '../components/GroupMembers'
 import Settlements from '../components/Settlements'
-import { getExpenses, getGroupBalances, getGroupMembers, createExpense, getCurrentUser, getSettlements, createSettlement, confirmSettlement, cancelSettlement, removeMember, transferAdmin, leaveGroup } from '../api'
+import ExpenseForm from '../components/ExpenseForm'
+import { getExpenses, getGroupBalances, getGroupMembers, createExpense, getCurrentUser, getSettlements, createSettlement, confirmSettlement, cancelSettlement, removeMember, transferAdmin, leaveGroup, getCategories } from '../api'
 import './Dashboard.css'
 
 function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
@@ -12,8 +13,10 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
   const [members, setMembers] = useState([])
   const [settlements, setSettlements] = useState([])
   const [currentUser, setCurrentUser] = useState(null)
+  const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [showExpenseForm, setShowExpenseForm] = useState(false)
 
   const selectedGroup = useMemo(() => {
     if (!groups.length) return null
@@ -22,6 +25,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
 
   useEffect(() => {
     getCurrentUser().then(setCurrentUser).catch(console.error)
+    getCategories().then(setCategories).catch(console.error)
   }, [])
 
   useEffect(() => {
@@ -56,38 +60,23 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
     }
   }
 
-  async function handleAddTransaction() {
+  function handleAddTransaction() {
     if (!selectedGroup) {
       alert('Please create and select a group first.')
       return
     }
+    setShowExpenseForm(true)
+  }
 
-    const description = prompt('Enter expense description:')
-    if (!description) return
-
-    const amount = parseFloat(prompt('Enter amount:'))
-    if (Number.isNaN(amount)) return
-
-    try {
-      await createExpense(selectedGroup.id, {
-        description,
-        amount,
-        base_amount: amount,
-        currency: 'USD',
-        expense_date: new Date().toISOString().split('T')[0],
-        category_id: 1,
-        split_type: 'equal',
-      })
-      loadGroupData(selectedGroup.id)
-    } catch (err) {
-      alert('Failed to add expense: ' + err.message)
-    }
+  async function handleExpenseSubmit(body) {
+    await createExpense(selectedGroup.id, body)
+    loadGroupData(selectedGroup.id)
   }
 
   async function handleSettlePayment(member) {
     if (!selectedGroup) return
 
-    if (member.owes >= 0) {
+    if (member.owes <= 0) {
       alert('This member owes you money. Ask them to record the payment from their account, then confirm it in Settlements.')
       return
     }
@@ -139,7 +128,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
     }
   }
 
-  async function handleRemoveMember(userId){
+  async function handleRemoveMember(userId) {
     if (!selectedGroup) return
     if (!confirm('Remove this member from the group?')) return
     try {
@@ -150,7 +139,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
     }
   }
 
-  async function handleTransferAdmin(userId){
+  async function handleTransferAdmin(userId) {
     if (!selectedGroup) return
     if (!confirm('Transfer admin to this member? You will become a regular member')) return
     try {
@@ -161,7 +150,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
     }
   }
 
-  async function handleLeaveGroup(){
+  async function handleLeaveGroup() {
     if (!selectedGroup) return
     if (!confirm('Are you sure you want to leave this group?')) return
     try {
@@ -169,13 +158,15 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
       setSelectedGroup(null)
       loadGroupData(selectedGroup.id)
     } catch (err) {
-      if (err.message.includes('Admin')){
+      if (err.message.includes('Admin')) {
         alert('Failed to leave group: there needs to be an admin in the group. Transfer admin to someone else first.')
       } else {
         alert('Failed to leave group: ' + err.message)
       }
     }
   }
+
+  const currentMonthName = new Date().toLocaleString('default', { month: 'long', year: 'numeric' })
 
   if (!groups.length) {
     return (
@@ -194,14 +185,16 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
   if (loading) return <div>Loading...</div>
   if (error) return <div>Error: {error}</div>
 
-  const transactions = expenses.map(exp => ({
-    id: exp.id,
-    description: exp.description,
-    amount: Number(exp.amount) * -1,
-    date: new Date(exp.expense_date).toISOString().split('T')[0],
-    category: 'Misc',
-    paidByName: exp.paid_by_name || null,
-  }))
+  const transactions = expenses
+    .map(exp => ({
+      id: exp.id,
+      description: exp.description,
+      amount: Number(exp.amount) * -1,
+      date: new Date(exp.expense_date).toISOString().split('T')[0],
+      category: categories.find(c => c.id === exp.category_id)?.name || 'Misc',
+      paidByName: exp.paid_by_name || null,
+    }))
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
 
   const transformedMembers = members.map(mem => {
     const balance = balances.find(b => b.user_id === mem.user_id)?.net_balance || 0
@@ -214,8 +207,8 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
 
     const isYou = mem.user_id === currentUser?.id
     const isAdmin = mem.role === 'admin'
-    const displayName = isYou ? 'You' : (mem.display_name || 'Friend')
-    const initialsSource = isYou ? 'You' : (mem.display_name || 'Friend')
+    const displayName = isYou ? `${mem.display_name} (You)` : (mem.display_name || 'Friend')
+    const initialsSource = mem.display_name || 'You'
 
     return {
       id: mem.user_id,  
@@ -231,16 +224,16 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
     }
   })
 
-  const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ]
-  const currentMonthName = monthNames[new Date().getMonth()]
+  transformedMembers.sort((a, b) => {
+    if (a.isAdmin !== b.isAdmin) return a.isAdmin ? -1 : 1
+    return a.name.localeCompare(b.name)
+  })
 
-  // Calculate summary values
+  const currentUserIsAdmin = members.find(m => m.user_id === currentUser?.id)?.role === 'admin'
+
   const currentMonth = new Date().getMonth()
   const currentYear = new Date().getFullYear()
-  
+
   const monthlyExpenses = expenses
     .filter(exp => {
       const expDate = new Date(exp.expense_date)
@@ -248,9 +241,8 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
     })
     .reduce((sum, exp) => sum + Number(exp.amount), 0)
 
-  const userBalance = balances.find(b => b.user_id === currentUser?.id)?.net_balance || 0
-  const groupOwesYou = Math.max(0, Number(userBalance))
-  const currentUserIsAdmin = members.find(m => m.user_id === currentUser?.id)?.role === 'admin'
+  const userBalance = Math.max(0, balances.reduce((sum, b) => sum + Number(b.net_balance), 0))
+  const groupOwesYou = balances.reduce((sum, b) => sum + Math.max(0, -Number(b.net_balance)), 0)
 
   return (
     <div className="dashboard">
@@ -263,7 +255,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
       </div>
 
       <div className="summary-cards">
-        <SummaryCard title="Total Balance" amount={Number(userBalance)} type="balance" />
+        <SummaryCard title="Your Balance" amount={Number(userBalance)} type="balance" />
         <SummaryCard title="Monthly Expenses" amount={monthlyExpenses} type="expense" />
         <SummaryCard title="Group Owes You" amount={groupOwesYou} type="owed" />
       </div>
@@ -274,22 +266,32 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
         </div>
         <div className="grid-right">
           <GroupMembers
-            members = {transformedMembers}
+            members={transformedMembers}
             currentUser={currentUser}
             isAdmin={currentUserIsAdmin}
             onSettlePayment={handleSettlePayment}
             onRemoveMember={handleRemoveMember}
             onTransferAdmin={handleTransferAdmin}
             onLeaveGroup={handleLeaveGroup}
-            />
-          <Settlements 
-            settlements={settlements} 
+          />
+          <Settlements
+            settlements={settlements}
             currentUserId={currentUser?.id}
             onConfirmSettlement={handleConfirmSettlement}
             onCancelSettlement={handleCancelSettlement}
           />
         </div>
       </div>
+
+      {showExpenseForm && (
+        <ExpenseForm
+          members={members}
+          currentUserId={currentUser?.id}
+          categories={categories}
+          onSubmit={handleExpenseSubmit}
+          onClose={() => setShowExpenseForm(false)}
+        />
+      )}
     </div>
   )
 }

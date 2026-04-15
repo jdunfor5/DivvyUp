@@ -7,6 +7,9 @@ export default function Login({ onLogin }) {
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+
+  const AVATARS = ['😊','😎','🤠','🥳','🦊','🐼','🐸','🦁','🐯','🐧','🦄','🐙','🦋','🌻','⭐','🍕','🎸','🚀','🏄','🎯']
+  function randomAvatar() { return AVATARS[Math.floor(Math.random() * AVATARS.length)] }
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
@@ -18,7 +21,7 @@ export default function Login({ onLogin }) {
       if (mode === 'signup') {
         await api('/users/', {
           method: 'POST',
-          body: JSON.stringify({ email, password, display_name: displayName }),
+          body: JSON.stringify({ email, password, display_name: displayName, avatar_emoji: randomAvatar() }),
         })
       }
       await login(email, password)

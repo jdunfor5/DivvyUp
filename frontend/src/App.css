@@ -39,6 +39,8 @@ body {
 /* ── Sidebar ── */
 .sidebar {
   width: 240px;
+  min-width: 240px;
+  max-width: 240px;
   background: var(--sidebar-bg);
   border-right: 1.5px solid var(--sidebar-border);
   display: flex;
@@ -48,6 +50,8 @@ body {
   top: 0;
   left: 0;
   height: 100vh;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .sidebar-logo {
@@ -283,6 +287,8 @@ body {
   border-radius: 6px;
   font-size: 13px;
   font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .create-group-form input:focus {

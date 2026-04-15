@@ -5,7 +5,7 @@ from decimal import Decimal
 from sqlalchemy import String, DateTime, Date, Boolean, Numeric, Text, ForeignKey, Enum as SAEnum, func
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from app.dependencies.database import Base
 from app.models.recurring import SplitType
 
@@ -48,6 +48,12 @@ class ExpenseSplit(Base):
 
 # ── Pydantic Schemas ──────────────────────────────────────────
 
+class MemberSplit(BaseModel):
+    user_id: uuid.UUID
+    amount: Optional[Decimal] = None      # for exact splits
+    percentage: Optional[Decimal] = None  # for percentage splits
+
+
 class ExpenseCreate(BaseModel):
     description: str
     amount: Decimal
@@ -58,6 +64,23 @@ class ExpenseCreate(BaseModel):
     split_type: SplitType = SplitType.equal
     expense_date: date
     notes: Optional[str] = None
+    member_splits: Optional[list[MemberSplit]] = None
+
+    @model_validator(mode="after")
+    def validate_splits(self):
+        if self.split_type == SplitType.exact:
+            if not self.member_splits:
+                raise ValueError("member_splits is required for exact split type.")
+            total = sum(s.amount or Decimal("0") for s in self.member_splits)
+            if total > self.base_amount:
+                raise ValueError(f"member_splits amounts cannot exceed base_amount ({self.base_amount}), got {total}.")
+        elif self.split_type == SplitType.percentage:
+            if not self.member_splits:
+                raise ValueError("member_splits is required for percentage split type.")
+            total = sum(s.percentage or Decimal("0") for s in self.member_splits)
+            if total > Decimal("100"):
+                raise ValueError(f"member_splits percentages cannot exceed 100, got {total}.")
+        return self
 
 
 class ExpenseRead(BaseModel):
@@ -90,6 +113,7 @@ class ExpenseUpdate(BaseModel):
     split_type: Optional[SplitType] = None
     expense_date: Optional[date] = None
     notes: Optional[str] = None
+    member_splits: Optional[list[MemberSplit]] = None
 
 
 class ExpenseSplitRead(BaseModel):
