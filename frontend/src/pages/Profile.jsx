@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { updateCurrentUser } from '../api'
+import { updateCurrentUser, deleteCurrentUser, clearToken } from '../api'
 
 const CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'INR']
 
-export default function Profile({ currentUser, onUpdate, onClose }) {
+export default function Profile({ currentUser, onUpdate, onClose, onDeleteAccount }) {
   const [displayName, setDisplayName] = useState(currentUser.display_name)
   const [avatarEmoji, setAvatarEmoji] = useState(currentUser.avatar_emoji)
   const [phone, setPhone] = useState(currentUser.phone || '')
@@ -13,6 +13,20 @@ export default function Profile({ currentUser, onUpdate, onClose }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [saved, setSaved] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
+
+  async function handleDeleteAccount() {
+    setDeleteError(null)
+    try {
+      await deleteCurrentUser()
+      clearToken()
+      onDeleteAccount()
+    } catch (err) {
+      setDeleteError(err.message)
+      setConfirmingDelete(false)
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -108,6 +122,21 @@ export default function Profile({ currentUser, onUpdate, onClose }) {
           </button>
 
         </form>
+
+        {confirmingDelete ? (
+          <div style={s.deleteConfirm}>
+            <p style={s.deleteConfirmText}>This will permanently delete your account. Are you sure?</p>
+            {deleteError && <p style={s.error}>{deleteError}</p>}
+            <div style={s.deleteConfirmBtns}>
+              <button onClick={() => setConfirmingDelete(false)} style={s.deleteCancelBtn}>Cancel</button>
+              <button onClick={handleDeleteAccount} style={s.deleteConfirmBtn}>Yes, delete</button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setConfirmingDelete(true)} style={s.deleteBtn}>
+            Delete Account
+          </button>
+        )}
       </div>
     </div>
   )
@@ -207,5 +236,58 @@ const s = {
     cursor: 'pointer',
     fontFamily: "'Plus Jakarta Sans', sans-serif",
     transition: 'background 0.15s',
+  },
+  deleteBtn: {
+    marginTop: '12px',
+    width: '100%',
+    padding: '0.65rem',
+    borderRadius: '10px',
+    border: '1.5px solid #fca5a5',
+    background: 'transparent',
+    color: '#dc2626',
+    fontSize: '13px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    fontFamily: "'Plus Jakarta Sans', sans-serif",
+  },
+  deleteConfirm: {
+    marginTop: '12px',
+    padding: '12px',
+    borderRadius: '10px',
+    border: '1.5px solid #fca5a5',
+    background: '#fff5f5',
+  },
+  deleteConfirmText: {
+    fontSize: '13px',
+    color: '#7f1d1d',
+    marginBottom: '10px',
+  },
+  deleteConfirmBtns: {
+    display: 'flex',
+    gap: '8px',
+  },
+  deleteCancelBtn: {
+    flex: 1,
+    padding: '0.55rem',
+    borderRadius: '8px',
+    border: '1.5px solid #e5e7eb',
+    background: '#fff',
+    color: '#374151',
+    fontSize: '13px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    fontFamily: "'Plus Jakarta Sans', sans-serif",
+  },
+  deleteConfirmBtn: {
+    flex: 1,
+    padding: '0.55rem',
+    borderRadius: '8px',
+    border: 'none',
+    background: '#dc2626',
+    color: '#fff',
+    fontSize: '13px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    fontFamily: "'Plus Jakarta Sans', sans-serif",
   },
 }

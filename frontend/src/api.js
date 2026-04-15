@@ -187,3 +187,7 @@ export async function getCategories() {
 export async function updateCurrentUser(data) {
   return api('/users/me', { method: 'PATCH', body: JSON.stringify(data) })
 }
+
+export async function deleteCurrentUser() {
+  return api('/users/me', { method: 'DELETE' })
+}

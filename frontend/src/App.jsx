@@ -123,6 +123,13 @@ function App() {
     setSelectedGroupId(null)
   }
 
+  function handleDeleteAccount() {
+    setCurrentUser(null)
+    setGroups([])
+    setSelectedGroupId(null)
+    setShowProfile(false)
+  }
+
   function handleSelectGroup(groupId) {
     setSelectedGroupId(groupId)
   }
@@ -291,6 +298,7 @@ function App() {
           currentUser={currentUser}
           onUpdate={setCurrentUser}
           onClose={() => setShowProfile(false)}
+          onDeleteAccount={handleDeleteAccount}
         />
       )}
     </div>
