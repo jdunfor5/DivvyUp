@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
+import FriendsTab from './components/FriendsTab'
 import Profile from './pages/Profile'
 import { getToken, getCurrentUser, clearToken, getGroups, createGroup, deleteGroup, joinGroup, getGroupMembers } from './api'
 import './App.css'
@@ -12,6 +13,7 @@ function App() {
   const [selectedGroupId, setSelectedGroupId] = useState(null)
   const [groupsOpen, setGroupsOpen] = useState(true)
   const [friendsOpen, setFriendsOpen] = useState(true)
+  const [activeView, setActiveView] = useState('groups')
   const [creatingGroup, setCreatingGroup] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
   const [joiningGroup, setJoiningGroup] = useState(false)
@@ -132,6 +134,7 @@ function App() {
 
   function handleSelectGroup(groupId) {
     setSelectedGroupId(groupId)
+    setActiveView('groups')
   }
 
   if (!authChecked) return null
@@ -187,7 +190,7 @@ function App() {
                   {groups.map(g => (
                     <li
                       key={g.id}
-                      className={`dropdown-item ${g.id === selectedGroupId ? 'active' : ''}`}
+                      className={`dropdown-item ${activeView === 'groups' && g.id === selectedGroupId ? 'active' : ''}`}
                       onClick={() => handleSelectGroup(g.id)}
                     >
                       <span className="item-avatar group-avatar">{g.name[0]}</span>
@@ -266,9 +269,12 @@ function App() {
             </button>
             {friendsOpen && (
               <ul className="dropdown-list">
-                <li className="dropdown-item">
+                <li
+                  className={`dropdown-item ${activeView === 'friends' ? 'active' : ''}`}
+                  onClick={() => setActiveView('friends')}
+                >
                   <span className="item-avatar friend-avatar">FR</span>
-                  <span className="item-label">Friends feature coming soon</span>
+                  <span className="item-label">Open friends tab</span>
                 </li>
               </ul>
             )}
@@ -291,7 +297,11 @@ function App() {
       </nav>
 
       <main className="main-content">
-        <Dashboard groups={groups} selectedGroupId={selectedGroupId} onSelectGroup={handleSelectGroup} />
+        {activeView === 'friends' ? (
+          <FriendsTab currentUser={currentUser} groups={groups} />
+        ) : (
+          <Dashboard groups={groups} selectedGroupId={selectedGroupId} onSelectGroup={handleSelectGroup} />
+        )}
       </main>
       {showProfile && (
         <Profile

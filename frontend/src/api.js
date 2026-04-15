@@ -180,6 +180,24 @@ export async function leaveGroup(groupId){
   return api(`/groups/${groupId}/members`, { method: 'DELETE'})
 }
 
+// ── Friends ──────────────────────────────────────────────────
+
+export async function getFriends() {
+  return api('/friends/')
+}
+
+export async function addFriend(friendId) {
+  return api(`/friends/${friendId}`, { method: 'POST' })
+}
+
+export async function removeFriend(friendId) {
+  return api(`/friends/${friendId}`, { method: 'DELETE' })
+}
+
+export async function searchUsersByEmail(email) {
+  return api(`/users/search?email=${encodeURIComponent(email)}`)
+}
+
 // Categories
 export async function getCategories() {
   return api('/categories/')
