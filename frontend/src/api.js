@@ -181,3 +181,9 @@ export async function leaveGroup(groupId){
 export async function getCategories() {
   return api('/categories/')
 }
+
+// ── Users ─────────────────────────────────────────────────────
+
+export async function updateCurrentUser(data) {
+  return api('/users/me', { method: 'PATCH', body: JSON.stringify(data) })
+}

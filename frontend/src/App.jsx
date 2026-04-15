@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
+import Profile from './pages/Profile'
 import { getToken, getCurrentUser, clearToken, getGroups, createGroup, deleteGroup, joinGroup, getGroupMembers } from './api'
 import './App.css'
 
@@ -15,6 +16,7 @@ function App() {
   const [newGroupName, setNewGroupName] = useState('')
   const [joiningGroup, setJoiningGroup] = useState(false)
   const [inviteCode, setInviteCode] = useState('')
+  const [showProfile, setShowProfile] = useState(false)
 
   // On load, restore session from stored token
   useEffect(() => {
@@ -111,7 +113,7 @@ function App() {
   }
 
   function handleProfileUpdate() {
-    alert("TODO: requested profile update form.")
+    setShowProfile(true)
   }
 
   function handleLogout() {
@@ -284,6 +286,13 @@ function App() {
       <main className="main-content">
         <Dashboard groups={groups} selectedGroupId={selectedGroupId} onSelectGroup={handleSelectGroup} />
       </main>
+      {showProfile && (
+        <Profile
+          currentUser={currentUser}
+          onUpdate={setCurrentUser}
+          onClose={() => setShowProfile(false)}
+        />
+      )}
     </div>
   )
 }
