@@ -286,7 +286,6 @@ function App() {
       <main className="main-content">
         <Dashboard groups={groups} selectedGroupId={selectedGroupId} onSelectGroup={handleSelectGroup} />
       </main>
-
       {showProfile && (
         <Profile
           currentUser={currentUser}
