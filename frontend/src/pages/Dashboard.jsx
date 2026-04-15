@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import SummaryCard from '../components/SummaryCard'
 import TransactionList from '../components/TransactionList'
 import GroupMembers from '../components/GroupMembers'
@@ -7,7 +7,8 @@ import ExpenseForm from '../components/ExpenseForm'
 import { getExpenses, getGroupBalances, getGroupMembers, createExpense, getCurrentUser, getSettlements, createSettlement, confirmSettlement, cancelSettlement, removeMember, transferAdmin, leaveGroup, getCategories } from '../api'
 import './Dashboard.css'
 
-function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
+function Dashboard({ groups = [] }) {
+  const [selectedGroup, setSelectedGroup] = useState(null)
   const [expenses, setExpenses] = useState([])
   const [balances, setBalances] = useState([])
   const [members, setMembers] = useState([])
@@ -18,15 +19,16 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
   const [error, setError] = useState(null)
   const [showExpenseForm, setShowExpenseForm] = useState(false)
 
-  const selectedGroup = useMemo(() => {
-    if (!groups.length) return null
-    return groups.find(g => g.id === selectedGroupId) || groups[0]
-  }, [groups, selectedGroupId])
-
   useEffect(() => {
     getCurrentUser().then(setCurrentUser).catch(console.error)
     getCategories().then(setCategories).catch(console.error)
   }, [])
+
+  useEffect(() => {
+    if (groups.length > 0 && !selectedGroup) {
+      setSelectedGroup(groups[0])
+    }
+  }, [groups, selectedGroup])
 
   useEffect(() => {
     if (selectedGroup) {
@@ -162,9 +164,9 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
         alert('Failed to leave group: there needs to be an admin in the group. Transfer admin to someone else first.')
       } else {
         alert('Failed to leave group: ' + err.message)
-      }
+        }  
+      } 
     }
-  }
 
   const currentMonthName = new Date().toLocaleString('default', { month: 'long', year: 'numeric' })
 
@@ -174,7 +176,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
         <div className="dashboard-header">
           <div>
             <h1>Dashboard</h1>
-            <p className="dashboard-date"><span id="display-month">{currentMonthName}</span></p>
+            <p className="dashboard-date">February 2026</p>
           </div>
         </div>
         <div>Please create a group first from the sidebar.</div>
@@ -211,10 +213,9 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
     const initialsSource = mem.display_name || 'You'
 
     return {
-      id: mem.user_id,  
+      id: mem.user_id,
       name: displayName,
       initials: initialsSource.split(' ').map(n => n[0]).join('').toUpperCase(),
-      avatar: mem.avatar_emoji,
       owes: Number(balance),
       paymentsToYou,
       paymentsFromYou,
@@ -230,6 +231,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
   })
 
   const currentUserIsAdmin = members.find(m => m.user_id === currentUser?.id)?.role === 'admin'
+
 
   const currentMonth = new Date().getMonth()
   const currentYear = new Date().getFullYear()
@@ -249,9 +251,20 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
       <div className="dashboard-header">
         <div>
           <h1>{selectedGroup?.name || 'Dashboard'}</h1>
-          <p className="dashboard-date"><span id="display-month">{currentMonthName}</span></p>
+          <p className="dashboard-date">February 2026</p>
         </div>
         <button className="btn-primary" onClick={handleAddTransaction}>+ Add Transaction</button>
+      </div>
+
+      <div className="group-selector">
+        <select
+          value={selectedGroup?.id || ''}
+          onChange={e => setSelectedGroup(groups.find(g => g.id === e.target.value))}
+        >
+          {groups.map(g => (
+            <option key={g.id} value={g.id}>{g.name}</option>
+          ))}
+        </select>
       </div>
 
       <div className="summary-cards">
@@ -262,7 +275,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
 
       <div className="dashboard-grid">
         <div className="grid-left">
-          <TransactionList transactions={transactions} groupId={selectedGroup?.id} currentUserId={currentUser?.id} groupMembers={members} />
+          <TransactionList transactions={transactions} />
         </div>
         <div className="grid-right">
           <GroupMembers
