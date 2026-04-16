@@ -14,36 +14,25 @@ const CATEGORY_COLORS = {
   'Other':         '#14b8a6',
 }
 
-const SPLIT_TYPES = [
-  { value: 'equal', label: 'Split equally' },
-  { value: 'exact', label: 'Exact amounts' },
-  { value: 'percentage', label: 'By percentage' },
+const INTERVALS = [
+  { value: 'daily',    label: 'Daily' },
+  { value: 'weekly',   label: 'Weekly' },
+  { value: 'biweekly', label: 'Every 2 weeks' },
+  { value: 'monthly',  label: 'Monthly' },
+  { value: 'yearly',   label: 'Yearly' },
 ]
 
-function ExpenseForm({ members, currentUserId, categories = [], onSubmit, onClose, initialValues = null }) {
+function RecurringExpenseForm({ categories = [], onSubmit, onClose, initialValues = null }) {
   const isEdit = initialValues !== null
   const [description, setDescription] = useState(initialValues?.description ?? '')
   const [amount, setAmount] = useState(initialValues?.amount ?? '')
-  const [expenseDate, setExpenseDate] = useState(
-    initialValues?.expense_date
-      ? new Date(initialValues.expense_date).toISOString().split('T')[0]
-      : new Date().toISOString().split('T')[0]
-  )
-  const [splitType, setSplitType] = useState(initialValues?.split_type ?? 'equal')
-  const [memberSplits, setMemberSplits] = useState({})
   const [categoryId, setCategoryId] = useState(initialValues?.category_id ?? 1)
+  const [interval, setInterval] = useState(initialValues?.interval ?? 'monthly')
+  const [startDate, setStartDate] = useState(initialValues?.start_date ?? new Date().toISOString().split('T')[0])
+  const [endDate, setEndDate] = useState(initialValues?.end_date ?? '')
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [hoveredCat, setHoveredCat] = useState(null)
-
-  const nonPayers = members.filter(m => m.user_id !== currentUserId)
-
-  function updateSplit(userId, field, value) {
-    setMemberSplits(prev => ({
-      ...prev,
-      [userId]: { ...prev[userId], [field]: value },
-    }))
-  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -60,17 +49,12 @@ function ExpenseForm({ members, currentUserId, categories = [], onSubmit, onClos
       amount: base,
       base_amount: base,
       currency: 'USD',
-      expense_date: expenseDate,
-      split_type: splitType,
+      exchange_rate: 1,
       category_id: categoryId,
-    }
-
-    if (splitType === 'exact' || splitType === 'percentage') {
-      const field = splitType === 'exact' ? 'amount' : 'percentage'
-      body.member_splits = nonPayers.map(m => ({
-        user_id: m.user_id,
-        [field]: parseFloat(memberSplits[m.user_id]?.[field] || 0),
-      }))
+      split_type: 'equal',
+      interval,
+      start_date: startDate,
+      end_date: endDate || null,
     }
 
     setSubmitting(true)
@@ -88,7 +72,7 @@ function ExpenseForm({ members, currentUserId, categories = [], onSubmit, onClos
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{isEdit ? 'Edit Expense' : 'Add Expense'}</h2>
+          <h2>{isEdit ? 'Edit Recurring Expense' : 'Add Recurring Expense'}</h2>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
 
@@ -99,7 +83,7 @@ function ExpenseForm({ members, currentUserId, categories = [], onSubmit, onClos
               type="text"
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder="e.g. Dinner, Groceries"
+              placeholder="e.g. Netflix, Rent"
               required
             />
           </div>
@@ -118,13 +102,39 @@ function ExpenseForm({ members, currentUserId, categories = [], onSubmit, onClos
               />
             </div>
             <div className="form-group">
-              <label>Date</label>
+              <label>Start Date</label>
               <input
                 type="date"
-                value={expenseDate}
-                onChange={e => setExpenseDate(e.target.value)}
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
                 required
               />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label>End Date <span style={{ fontWeight: 400, color: 'var(--text-secondary)' }}>(optional)</span></label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={e => setEndDate(e.target.value)}
+              min={startDate}
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Repeats</label>
+            <div className="split-type-options">
+              {INTERVALS.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  className={`split-type-btn ${interval === opt.value ? 'active' : ''}`}
+                  onClick={() => setInterval(opt.value)}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -160,79 +170,12 @@ function ExpenseForm({ members, currentUserId, categories = [], onSubmit, onClos
             </div>
           )}
 
-          <div className="form-group">
-            <label>Split type</label>
-            <div className="split-type-options">
-              {SPLIT_TYPES.map(opt => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  className={`split-type-btn ${splitType === opt.value ? 'active' : ''}`}
-                  onClick={() => setSplitType(opt.value)}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {splitType === 'equal' && (
-            <p className="split-hint">
-              Split evenly among all {members.length} members.
-            </p>
-          )}
-
-          {splitType === 'exact' && (
-            <div className="form-group">
-              <label>Each member owes</label>
-              {nonPayers.map(m => (
-                <div key={m.user_id} className="split-row">
-                  <span className="split-name">{m.display_name}</span>
-                  <div className="split-input-wrap">
-                    <span className="split-prefix">$</span>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={memberSplits[m.user_id]?.amount || ''}
-                      onChange={e => updateSplit(m.user_id, 'amount', e.target.value)}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {splitType === 'percentage' && (
-            <div className="form-group">
-              <label>Each member's share</label>
-              {nonPayers.map(m => (
-                <div key={m.user_id} className="split-row">
-                  <span className="split-name">{m.display_name}</span>
-                  <div className="split-input-wrap">
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      placeholder="0"
-                      value={memberSplits[m.user_id]?.percentage || ''}
-                      onChange={e => updateSplit(m.user_id, 'percentage', e.target.value)}
-                    />
-                    <span className="split-suffix">%</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
           {error && <p className="form-error">{error}</p>}
 
           <div className="form-actions">
             <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
             <button type="submit" className="btn-primary" disabled={submitting}>
-              {submitting ? 'Saving...' : isEdit ? 'Save Changes' : 'Add Expense'}
+              {submitting ? 'Saving...' : isEdit ? 'Save Changes' : 'Add Recurring'}
             </button>
           </div>
         </form>
@@ -241,4 +184,4 @@ function ExpenseForm({ members, currentUserId, categories = [], onSubmit, onClos
   )
 }
 
-export default ExpenseForm
+export default RecurringExpenseForm

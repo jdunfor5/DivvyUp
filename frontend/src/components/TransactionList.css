@@ -59,7 +59,7 @@
 .transaction-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
   margin-top: 8px;
 }
 
@@ -138,4 +138,42 @@
   align-self: flex-end;
   margin-top: 4px;
   padding: 8px 14px;
+}
+
+.btn-edit {
+  background: none;
+  border: 1px solid #6b7280;
+  border-radius: 6px;
+  color: #4b5563;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 6px 10px;
+  line-height: 1;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.btn-edit:hover {
+  background: #e0e7ff;
+  border-color: #4f46e5;
+  color: #4f46e5;
+}
+
+.btn-delete {
+  background: none;
+  border: 1px solid #6b7280;
+  border-radius: 6px;
+  color: #4b5563;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 6px 10px;
+  line-height: 1;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.btn-delete:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #dc2626;
 }

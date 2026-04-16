@@ -191,3 +191,21 @@ export async function updateCurrentUser(data) {
 export async function deleteCurrentUser() {
   return api('/users/me', { method: 'DELETE' })
 }
+
+// ── Recurring Expenses ────────────────────────────────────────
+
+export async function getRecurringExpenses(groupId) {
+  return api(`/groups/${groupId}/recurring/`)
+}
+
+export async function createRecurringExpense(groupId, data) {
+  return api(`/groups/${groupId}/recurring/`, { method: 'POST', body: JSON.stringify(data) })
+}
+
+export async function updateRecurringExpense(groupId, recurringId, data) {
+  return api(`/groups/${groupId}/recurring/${recurringId}`, { method: 'PATCH', body: JSON.stringify(data) })
+}
+
+export async function deactivateRecurringExpense(groupId, recurringId) {
+  return api(`/groups/${groupId}/recurring/${recurringId}`, { method: 'DELETE' })
+}

@@ -6,6 +6,7 @@ function SummaryCard({ title, amount, type }) {
     income: '📈',
     expense: '📉',
     owed: '🤝',
+    upcoming: '🔄',
   }
 
   const formatted = new Intl.NumberFormat('en-US', {

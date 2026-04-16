@@ -5,7 +5,9 @@ import GroupMembers from '../components/GroupMembers'
 import Settlements from '../components/Settlements'
 import ExpenseForm from '../components/ExpenseForm'
 import SettlementForm from '../components/SettlementForm'
-import { getExpenses, getGroupBalances, getGroupMembers, createExpense, getCurrentUser, getSettlements, createSettlement, confirmSettlement, cancelSettlement, removeMember, transferAdmin, leaveGroup, getCategories } from '../api'
+import RecurringExpenses from '../components/RecurringExpenses'
+import RecurringExpenseForm from '../components/RecurringExpenseForm'
+import { getExpenses, getGroupBalances, getGroupMembers, createExpense, updateExpense, deleteExpense, getCurrentUser, getSettlements, createSettlement, confirmSettlement, cancelSettlement, removeMember, transferAdmin, leaveGroup, getCategories, getRecurringExpenses, createRecurringExpense, updateRecurringExpense, deactivateRecurringExpense } from '../api'
 import './Dashboard.css'
 
 function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
@@ -18,6 +20,10 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [showExpenseForm, setShowExpenseForm] = useState(false)
+  const [editingExpense, setEditingExpense] = useState(null)
+  const [showRecurringForm, setShowRecurringForm] = useState(false)
+  const [editingRecurring, setEditingRecurring] = useState(null)
+  const [recurringExpenses, setRecurringExpenses] = useState([])
   const [settlementTarget, setSettlementTarget] = useState(null)
 
   const selectedGroup = useMemo(() => {
@@ -44,16 +50,18 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
   async function loadGroupData(groupId) {
     setLoading(true)
     try {
-      const [expData, balData, memData, setData] = await Promise.all([
+      const [expData, balData, memData, setData, recData] = await Promise.all([
         getExpenses(groupId),
         getGroupBalances(groupId),
         getGroupMembers(groupId),
         getSettlements(groupId),
+        getRecurringExpenses(groupId),
       ])
       setExpenses(expData)
       setBalances(balData)
       setMembers(memData)
       setSettlements(setData)
+      setRecurringExpenses(recData)
       setError(null)
     } catch (err) {
       setError(err.message)
@@ -70,9 +78,51 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
     setShowExpenseForm(true)
   }
 
+  function handleEditExpense(expenseId) {
+    const raw = expenses.find(e => e.id === expenseId)
+    if (raw) setEditingExpense(raw)
+  }
+
   async function handleExpenseSubmit(body) {
     await createExpense(selectedGroup.id, body)
     loadGroupData(selectedGroup.id)
+  }
+
+  async function handleEditExpenseSubmit(body) {
+    await updateExpense(selectedGroup.id, editingExpense.id, body)
+    setEditingExpense(null)
+    loadGroupData(selectedGroup.id)
+  }
+
+  async function handleDeleteExpense(expenseId) {
+    if (!confirm('Delete this transaction?')) return
+    try {
+      await deleteExpense(selectedGroup.id, expenseId)
+      loadGroupData(selectedGroup.id)
+    } catch (err) {
+      alert('Failed to delete: ' + err.message)
+    }
+  }
+
+  async function handleRecurringSubmit(body) {
+    await createRecurringExpense(selectedGroup.id, body)
+    loadGroupData(selectedGroup.id)
+  }
+
+  async function handleEditRecurringSubmit(body) {
+    await updateRecurringExpense(selectedGroup.id, editingRecurring.id, body)
+    setEditingRecurring(null)
+    loadGroupData(selectedGroup.id)
+  }
+
+  async function handleDeactivateRecurring(recurringId) {
+    if (!confirm('Deactivate this recurring expense?')) return
+    try {
+      await deactivateRecurringExpense(selectedGroup.id, recurringId)
+      loadGroupData(selectedGroup.id)
+    } catch (err) {
+      alert('Failed to deactivate: ' + err.message)
+    }
   }
 
   function handleSettlePayment(member) {
@@ -161,7 +211,12 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
     )
   }
 
-  if (loading) return <div>Loading...</div>
+  if (loading) return (
+    <div className="loading-container">
+      <div className="spinner"></div>
+      <p>Loading...</p>
+    </div>
+  )
   if (error) return <div>Error: {error}</div>
 
   const transactions = expenses
@@ -190,7 +245,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
     const initialsSource = mem.display_name || 'You'
 
     return {
-      id: mem.user_id,  
+      id: mem.user_id,
       name: displayName,
       initials: initialsSource.split(' ').map(n => n[0]).join('').toUpperCase(),
       avatar: mem.avatar_emoji,
@@ -223,6 +278,12 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
   const userBalance = Math.max(0, balances.reduce((sum, b) => sum + Number(b.net_balance), 0))
   const groupOwesYou = balances.reduce((sum, b) => sum + Math.max(0, -Number(b.net_balance)), 0)
 
+  const todayStr = new Date().toLocaleDateString('en-CA')
+  const in30DaysStr = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('en-CA')
+  const upcomingTotal = recurringExpenses
+    .filter(r => r.is_active && r.next_due_date >= todayStr && r.next_due_date <= in30DaysStr)
+    .reduce((sum, r) => sum + Number(r.amount), 0)
+
   return (
     <div className="dashboard">
       <div className="dashboard-header">
@@ -230,18 +291,29 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
           <h1>{selectedGroup?.name || 'Dashboard'}</h1>
           <p className="dashboard-date"><span id="display-month">{currentMonthName}</span></p>
         </div>
-        <button className="btn-primary" onClick={handleAddTransaction}>+ Add Transaction</button>
+        <div className="header-actions">
+          <button className="btn-primary" onClick={() => setShowRecurringForm(true)}>+ Add Recurring</button>
+          <button className="btn-primary" onClick={handleAddTransaction}>+ Add Expenses</button>
+        </div>
       </div>
 
       <div className="summary-cards">
         <SummaryCard title="Your Balance" amount={Number(userBalance)} type="balance" />
         <SummaryCard title="Monthly Expenses" amount={monthlyExpenses} type="expense" />
         <SummaryCard title="Group Owes You" amount={groupOwesYou} type="owed" />
+        <SummaryCard title="Upcoming (30 days)" amount={upcomingTotal} type="upcoming" />
       </div>
 
       <div className="dashboard-grid">
         <div className="grid-left">
-          <TransactionList transactions={transactions} groupId={selectedGroup?.id} currentUserId={currentUser?.id} groupMembers={members} />
+          <TransactionList
+            transactions={transactions}
+            groupId={selectedGroup?.id}
+            currentUserId={currentUser?.id}
+            groupMembers={members}
+            onEdit={handleEditExpense}
+            onDelete={handleDeleteExpense}
+          />
         </div>
         <div className="grid-right">
           <GroupMembers
@@ -261,6 +333,14 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
             onCancelSettlement={handleCancelSettlement}
           />
         </div>
+        <div className="grid-recurring">
+          <RecurringExpenses
+            recurringExpenses={recurringExpenses}
+            categories={categories}
+            onDeactivate={handleDeactivateRecurring}
+            onEdit={setEditingRecurring}
+          />
+        </div>
       </div>
 
       {showExpenseForm && (
@@ -270,6 +350,34 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
           categories={categories}
           onSubmit={handleExpenseSubmit}
           onClose={() => setShowExpenseForm(false)}
+        />
+      )}
+
+      {editingExpense && (
+        <ExpenseForm
+          members={members}
+          currentUserId={currentUser?.id}
+          categories={categories}
+          initialValues={editingExpense}
+          onSubmit={handleEditExpenseSubmit}
+          onClose={() => setEditingExpense(null)}
+        />
+      )}
+
+      {showRecurringForm && (
+        <RecurringExpenseForm
+          categories={categories}
+          onSubmit={handleRecurringSubmit}
+          onClose={() => setShowRecurringForm(false)}
+        />
+      )}
+
+      {editingRecurring && (
+        <RecurringExpenseForm
+          categories={categories}
+          initialValues={editingRecurring}
+          onSubmit={handleEditRecurringSubmit}
+          onClose={() => setEditingRecurring(null)}
         />
       )}
 
