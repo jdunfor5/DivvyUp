@@ -2,7 +2,7 @@ import { useState } from 'react'
 import './ExpenseForm.css'
 
 const CATEGORY_COLORS = {
-  'Groceries':     '#b45309',
+  'Groceries':     '#22c55e',
   'Food & Drink':  '#f59e0b',
   'Transport':     '#3b82f6',
   'Housing':       '#ef4444',
@@ -10,7 +10,7 @@ const CATEGORY_COLORS = {
   'Shopping':      '#ec4899',
   'Travel':        '#06b6d4',
   'Utilities':     '#4f46e5',
-  'Health':        '#22c55e',
+  'Health':        '#b45309',
   'Other':         '#14b8a6',
 }
 

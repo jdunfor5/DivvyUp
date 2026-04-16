@@ -7,6 +7,7 @@ import ExpenseForm from '../components/ExpenseForm'
 import SettlementForm from '../components/SettlementForm'
 import RecurringExpenses from '../components/RecurringExpenses'
 import RecurringExpenseForm from '../components/RecurringExpenseForm'
+import BudgetCategories from '../components/BudgetCategories'
 import { getExpenses, getGroupBalances, getGroupMembers, createExpense, updateExpense, deleteExpense, getCurrentUser, getSettlements, createSettlement, confirmSettlement, cancelSettlement, removeMember, transferAdmin, leaveGroup, getCategories, getRecurringExpenses, createRecurringExpense, updateRecurringExpense, deactivateRecurringExpense } from '../api'
 import './Dashboard.css'
 
@@ -184,7 +185,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
     if (!confirm('Are you sure you want to leave this group?')) return
     try {
       await leaveGroup(selectedGroup.id)
-      setSelectedGroup(null)
+      onSelectGroup(null)
       loadGroupData(selectedGroup.id)
     } catch (err) {
       if (err.message.includes('Admin')) {
@@ -194,6 +195,17 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
       }
     }
   }
+
+  const categorySpending = useMemo(() => {
+    const map = {}
+    for (const exp of expenses) {
+      const cat = categories.find(c => c.id === exp.category_id)
+      const key = cat?.name || 'Misc'
+      if (!map[key]) map[key] = { category: key, icon: cat?.icon || '', spent: 0 }
+      map[key].spent += Number(exp.amount)
+    }
+    return Object.values(map).sort((a, b) => b.spent - a.spent)
+  }, [expenses, categories])
 
   const currentMonthName = new Date().toLocaleString('default', { month: 'long', year: 'numeric' })
 
@@ -298,10 +310,10 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
       </div>
 
       <div className="summary-cards">
-        <SummaryCard title="Your Balance" amount={Number(userBalance)} type="balance" />
         <SummaryCard title="Monthly Expenses" amount={monthlyExpenses} type="expense" />
-        <SummaryCard title="Group Owes You" amount={groupOwesYou} type="owed" />
+        <SummaryCard title="Your Balance" amount={Number(userBalance)} type="balance" />
         <SummaryCard title="Upcoming (30 days)" amount={upcomingTotal} type="upcoming" />
+        <SummaryCard title="Group Owes You" amount={groupOwesYou} type="owed" />
       </div>
 
       <div className="dashboard-grid">
@@ -316,6 +328,15 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
           />
         </div>
         <div className="grid-right">
+          <BudgetCategories budgets={categorySpending} />
+          <RecurringExpenses
+            recurringExpenses={recurringExpenses}
+            categories={categories}
+            onDeactivate={handleDeactivateRecurring}
+            onEdit={setEditingRecurring}
+          />
+        </div>
+        <div className="grid-recurring">
           <GroupMembers
             members={transformedMembers}
             currentUser={currentUser}
@@ -331,14 +352,6 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
             members={members}
             onConfirmSettlement={handleConfirmSettlement}
             onCancelSettlement={handleCancelSettlement}
-          />
-        </div>
-        <div className="grid-recurring">
-          <RecurringExpenses
-            recurringExpenses={recurringExpenses}
-            categories={categories}
-            onDeactivate={handleDeactivateRecurring}
-            onEdit={setEditingRecurring}
           />
         </div>
       </div>
