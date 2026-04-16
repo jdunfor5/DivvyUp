@@ -12,7 +12,6 @@ function App() {
   const [groups, setGroups] = useState([])
   const [selectedGroupId, setSelectedGroupId] = useState(null)
   const [groupsOpen, setGroupsOpen] = useState(true)
-  const [friendsOpen, setFriendsOpen] = useState(true)
   const [activeView, setActiveView] = useState('groups')
   const [creatingGroup, setCreatingGroup] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
@@ -255,37 +254,20 @@ function App() {
             )}
           </div>
 
-          {/* Friends Dropdown */}
-          <div className="sidebar-dropdown">
-            <button
-              className={`dropdown-toggle ${friendsOpen ? 'open' : ''}`}
-              onClick={() => setFriendsOpen(o => !o)}
-            >
-              <span className="dropdown-toggle-left">
-                <span className="nav-icon">🙋</span>
-                <span>Friends</span>
-              </span>
-              <span className="chevron">{friendsOpen ? '▾' : '▸'}</span>
-            </button>
-            {friendsOpen && (
-              <ul className="dropdown-list">
-                <li
-                  className={`dropdown-item ${activeView === 'friends' ? 'active' : ''}`}
-                  onClick={() => setActiveView('friends')}
-                >
-                  <span className="item-avatar friend-avatar">FR</span>
-                  <span className="item-label">Open friends tab</span>
-                </li>
-              </ul>
-            )}
-          </div>
+          <button
+            className={`sidebar-tab-button ${activeView === 'friends' ? 'active' : ''}`}
+            onClick={() => setActiveView('friends')}
+          >
+            <span className="sidebar-tab-button__icon">🙋</span>
+            <span>Friends</span>
+          </button>
 
         </div>
 
         {/* Bottom buttons */}
         <div className="sidebar-bottom">
-          <button className="btn-add">
-            <span id="friend-icon"></span>Add Friend
+          <button className="btn-add" onClick={() => setActiveView('friends')}>
+            <span id="friend-icon"></span>Friends
           </button>
           <button className="btn-add" onClick={handleProfileUpdate}>
             <span id="profile-icon"></span>{currentUser.display_name}

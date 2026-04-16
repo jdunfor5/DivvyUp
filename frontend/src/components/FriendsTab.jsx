@@ -151,10 +151,10 @@ function FriendsTab({ currentUser, groups = [] }) {
         acc.totalFriends += 1
         if (balance > 0) acc.owedToYou += balance
         if (balance < 0) acc.youOwe += Math.abs(balance)
-        if (balance === 0) acc.settled += 1
+        if (balance > 0) acc.friendsWhoOwe += 1
         return acc
       },
-      { totalFriends: 0, owedToYou: 0, youOwe: 0, settled: 0 }
+      { totalFriends: 0, owedToYou: 0, youOwe: 0, friendsWhoOwe: 0 }
     )
   }, [friends])
 
@@ -171,7 +171,7 @@ function FriendsTab({ currentUser, groups = [] }) {
           <p className="friends-eyebrow">Friends</p>
           <h1>Manage your shared expense circle</h1>
           <p className="friends-subtitle">
-            Review balances from the API, search real users by email, and keep your friends list up to date.
+            Review balances, find people by email, and keep your friends list up to date.
           </p>
         </div>
         <div className="friends-hero-actions">
@@ -204,9 +204,9 @@ function FriendsTab({ currentUser, groups = [] }) {
           <small>Open balances you still need to settle</small>
         </article>
         <article className="card friends-summary-card">
-          <span>Settled friends</span>
-          <strong>{stats.settled}</strong>
-          <small>Friends with no active balance right now</small>
+          <span>Friends who owe you</span>
+          <strong>{stats.friendsWhoOwe}</strong>
+          <small>Friends with a positive balance in your favor</small>
         </article>
       </div>
 
@@ -220,7 +220,7 @@ function FriendsTab({ currentUser, groups = [] }) {
           {loading ? (
             <div className="friends-empty-state">
               <h3>Loading friends</h3>
-              <p>Fetching your current friends from the API.</p>
+              <p>Loading your current friends now.</p>
             </div>
           ) : error ? (
             <div className="friends-empty-state">
@@ -248,7 +248,7 @@ function FriendsTab({ currentUser, groups = [] }) {
                         <p className="friend-note">{status.note}</p>
                         <div className="friend-groups">
                           <span>{formatAddedDate(friend.added_at)}</span>
-                          {balance === 0 ? <span>No pending settlement</span> : <span>Balance tracked in API</span>}
+                          {balance === 0 ? <span>No pending settlement</span> : <span>Balance updated automatically</span>}
                         </div>
                       </div>
                     </div>
@@ -295,7 +295,7 @@ function FriendsTab({ currentUser, groups = [] }) {
             </label>
 
             <p className="friend-helper-text">
-              Search uses the real `/users/search` endpoint and add uses the `/friends/:id` endpoint.
+              Search by email to quickly find people and add them to your friends list.
             </p>
 
             {searchingUsers ? (

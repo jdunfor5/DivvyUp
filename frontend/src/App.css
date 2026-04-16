@@ -93,6 +93,38 @@ body {
   margin-bottom: 4px;
 }
 
+.sidebar-tab-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  margin-top: 8px;
+  border: none;
+  border-radius: 12px;
+  background: var(--accent-xlight);
+  color: var(--accent-dark);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.sidebar-tab-button:hover {
+  background: var(--accent-light);
+  transform: translateY(-1px);
+}
+
+.sidebar-tab-button.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.sidebar-tab-button__icon {
+  font-size: 16px;
+}
+
 .dropdown-toggle {
   width: 100%;
   display: flex;
