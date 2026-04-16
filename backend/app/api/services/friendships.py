@@ -9,6 +9,9 @@ from ...models.friendship import Friendship
 from ...models.expense import Expense, ExpenseSplit
 from ...models.settlement import Settlement, PaymentStatus
 from ...models.group import GroupMember
+from ...dependencies.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 async def add_friend(db: AsyncSession, current_user: UserRead, friend_uuid: UUID):
@@ -27,8 +30,8 @@ async def add_friend(db: AsyncSession, current_user: UserRead, friend_uuid: UUID
         db.add(Friendship(user_id=current_user.id, friend_id=friend_uuid))
         await db.commit()
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error adding friend %s: %s", friend_uuid, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     return {"message": f"{friend_uuid} has been added to your friends list."}
 
@@ -54,8 +57,8 @@ async def list_friends(db: AsyncSession, current_user: UserRead):
                 "balance":      balance,
             })
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error listing friends for user %s: %s", current_user.id, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     return friends
 
@@ -74,8 +77,8 @@ async def get_friend(db: AsyncSession, current_user: UserRead, friend_uuid: UUID
         user, added_at = row
         balance = await _calculate_balance(db, current_user.id, user.id)
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error getting friend %s: %s", friend_uuid, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     return {
         "id":           user.id,
@@ -97,8 +100,8 @@ async def remove_friend(db: AsyncSession, current_user: UserRead, friend_uuid: U
         await db.delete(friendship)
         await db.commit()
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error removing friend %s: %s", friend_uuid, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     return None
 
@@ -107,11 +110,7 @@ async def _calculate_balance(db: AsyncSession, user_id: UUID, friend_id: UUID) -
     """
     Positive  = friend owes current_user
     Negative  = current_user owes friend
-
-    Looks at every group both users share, sums expense splits, then adjusts
-    for completed settlements between them.
     """
-    # Find all groups both users are in
     my_groups = await db.execute(select(GroupMember.group_id).where(GroupMember.user_id == user_id))
     my_group_ids = {row[0] for row in my_groups.all()}
 
@@ -121,7 +120,6 @@ async def _calculate_balance(db: AsyncSession, user_id: UUID, friend_id: UUID) -
     balance = Decimal("0")
 
     for group_id in shared_group_ids:
-        # Splits where current_user paid and friend owes a share
         result = await db.execute(
             select(ExpenseSplit.share_amount)
             .join(Expense, ExpenseSplit.expense_id == Expense.id)
@@ -135,7 +133,6 @@ async def _calculate_balance(db: AsyncSession, user_id: UUID, friend_id: UUID) -
         for (share,) in result.all():
             balance += share
 
-        # Splits where friend paid and current_user owes a share
         result = await db.execute(
             select(ExpenseSplit.share_amount)
             .join(Expense, ExpenseSplit.expense_id == Expense.id)
@@ -149,7 +146,6 @@ async def _calculate_balance(db: AsyncSession, user_id: UUID, friend_id: UUID) -
         for (share,) in result.all():
             balance -= share
 
-    # Completed settlements between the two users (any group)
     sent = await db.execute(
         select(Settlement.amount).where(
             Settlement.payer_id == user_id,
@@ -158,7 +154,7 @@ async def _calculate_balance(db: AsyncSession, user_id: UUID, friend_id: UUID) -
         )
     )
     for (amount,) in sent.all():
-        balance -= amount  # current_user paid friend, reduces what friend owes
+        balance -= amount
 
     received = await db.execute(
         select(Settlement.amount).where(
@@ -168,6 +164,6 @@ async def _calculate_balance(db: AsyncSession, user_id: UUID, friend_id: UUID) -
         )
     )
     for (amount,) in received.all():
-        balance += amount  # friend paid current_user, increases what friend owes
+        balance += amount
 
     return balance.quantize(Decimal("0.01"))

@@ -7,6 +7,9 @@ from sqlalchemy.exc import SQLAlchemyError
 from ...models.settlement import Settlement, SettlementCreate, PaymentStatus
 from ...models.group import GroupMember
 from ...models.user import UserRead
+from ...dependencies.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 async def create(db: AsyncSession, current_user: UserRead, group_uuid: UUID, payee_uuid: UUID, request: SettlementCreate):
@@ -37,8 +40,8 @@ async def create(db: AsyncSession, current_user: UserRead, group_uuid: UUID, pay
         await db.commit()
         await db.refresh(new_settlement)
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error creating settlement in group %s: %s", group_uuid, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     return new_settlement
 
@@ -53,8 +56,8 @@ async def read_all(db: AsyncSession, current_user: UserRead, group_uuid: UUID):
         result = await db.execute(statement)
         settlements = result.scalars().all()
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error reading settlements for group %s: %s", group_uuid, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     return settlements
 
@@ -68,10 +71,10 @@ async def read(db: AsyncSession, current_user: UserRead, group_uuid: UUID, settl
         result = await db.execute(select(Settlement).where(Settlement.id == settlement_uuid, Settlement.group_id == group_uuid))
         settlement = result.scalar_one_or_none()
         if not settlement:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{settlement_uuid} is an invalid settlement identifier.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Settlement not found.")
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error reading settlement %s: %s", settlement_uuid, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     return settlement
 
@@ -82,7 +85,7 @@ async def confirm(db: AsyncSession, current_user: UserRead, group_uuid: UUID, se
         settlement = result.scalar_one_or_none()
 
         if not settlement:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{settlement_uuid} is an invalid settlement identifier.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Settlement not found.")
 
         if settlement.payee_id != current_user.id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the payee can confirm a settlement.")
@@ -95,8 +98,8 @@ async def confirm(db: AsyncSession, current_user: UserRead, group_uuid: UUID, se
         await db.commit()
         await db.refresh(settlement)
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error confirming settlement %s: %s", settlement_uuid, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     return settlement
 
@@ -107,7 +110,7 @@ async def cancel(db: AsyncSession, current_user: UserRead, group_uuid: UUID, set
         settlement = result.scalar_one_or_none()
 
         if not settlement:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{settlement_uuid} is an invalid settlement identifier.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Settlement not found.")
 
         if settlement.payer_id != current_user.id and settlement.payee_id != current_user.id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the payer or payee can cancel a settlement.")
@@ -119,7 +122,7 @@ async def cancel(db: AsyncSession, current_user: UserRead, group_uuid: UUID, set
         await db.commit()
         await db.refresh(settlement)
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error cancelling settlement %s: %s", settlement_uuid, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     return settlement

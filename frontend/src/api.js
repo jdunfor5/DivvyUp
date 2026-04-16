@@ -71,6 +71,9 @@ export async function api(path, options = {}) {
     })
     clearTimeout(timeoutId)
     if (!res.ok) {
+      if (res.status === 401) {
+        clearToken()
+      }
       const err = await res.json().catch(() => ({}))
       const detail = Array.isArray(err.detail)
         ? err.detail.map(e => e.msg).join(', ')

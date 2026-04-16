@@ -8,6 +8,9 @@ from ...models.expense import Expense, ExpenseCreate, ExpenseUpdate, ExpenseSpli
 from ...models.recurring import SplitType
 from ...models.group import GroupMember, GroupMemberRole
 from ...models.user import User, UserRead
+from ...dependencies.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 async def create(db: AsyncSession, current_user: UserRead, group_uuid: UUID, request: ExpenseCreate):
@@ -44,8 +47,8 @@ async def create(db: AsyncSession, current_user: UserRead, group_uuid: UUID, req
         db.add_all(_build_splits(new_expense.id, members, request.base_amount, current_user.id, request.split_type, request.member_splits))
         await db.commit()
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error creating expense in group %s: %s", group_uuid, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     return new_expense
 
@@ -69,8 +72,8 @@ async def read_all(db: AsyncSession, current_user: UserRead, group_uuid: UUID):
             d["paid_by_name"] = paid_by_name
             expenses.append(d)
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error reading expenses for group %s: %s", group_uuid, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     return expenses
 
@@ -83,10 +86,10 @@ async def read(db: AsyncSession, current_user: UserRead, group_uuid: UUID, expen
 
         expense = await db.scalar(select(Expense).where(Expense.id == expense_uuid, Expense.group_id == group_uuid, Expense.is_deleted == False))
         if not expense:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{expense_uuid} is an invalid expense identifier.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found.")
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error reading expense %s: %s", expense_uuid, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     return expense
 
@@ -99,13 +102,13 @@ async def read_splits(db: AsyncSession, current_user: UserRead, group_uuid: UUID
 
         expense = await db.scalar(select(Expense).where(Expense.id == expense_uuid, Expense.group_id == group_uuid))
         if not expense:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{expense_uuid} is an invalid expense identifier.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found.")
 
         result = await db.execute(select(ExpenseSplit).where(ExpenseSplit.expense_id == expense_uuid))
         splits = result.scalars().all()
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error reading splits for expense %s: %s", expense_uuid, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     return splits
 
@@ -117,7 +120,7 @@ async def update(db: AsyncSession, current_user: UserRead, group_uuid: UUID, exp
         expense = result.scalar_one_or_none()
 
         if not expense:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{expense_uuid} is an invalid expense identifier.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found.")
 
         member_result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid, GroupMember.user_id == current_user.id))
         member = member_result.scalar_one_or_none()
@@ -140,8 +143,8 @@ async def update(db: AsyncSession, current_user: UserRead, group_uuid: UUID, exp
         await db.commit()
         await db.refresh(expense)
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error updating expense %s: %s", expense_uuid, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     return expense
 
@@ -153,7 +156,7 @@ async def delete(db: AsyncSession, current_user: UserRead, group_uuid: UUID, exp
         expense = result.scalar_one_or_none()
 
         if not expense:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{expense_uuid} is an invalid expense identifier.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Expense not found.")
 
         member_result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid, GroupMember.user_id == current_user.id))
         member = member_result.scalar_one_or_none()
@@ -166,8 +169,8 @@ async def delete(db: AsyncSession, current_user: UserRead, group_uuid: UUID, exp
         expense.is_deleted = True
         await db.commit()
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error deleting expense %s: %s", expense_uuid, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     return None
 

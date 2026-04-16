@@ -24,8 +24,8 @@ async def search_users(email: str = Query(..., min_length=1), current_user: User
     return await service.search(db, current_user, email)
 
 @router.get("/{user_uuid}", response_model=UserRead)
-async def read_user(user_uuid: UUID, _current_user: UserRead = Depends(get_current_user), db: AsyncSession = Depends(get_session)):
-    return await service.read_user(db, user_uuid)
+async def read_user(user_uuid: UUID, current_user: UserRead = Depends(get_current_user), db: AsyncSession = Depends(get_session)):
+    return await service.read_user(db, current_user, user_uuid)
 
 @router.patch("/me", response_model=UserRead)
 async def update_current_user(request: UserUpdate, current_user: UserRead = Depends(get_current_user), db: AsyncSession = Depends(get_session)):
