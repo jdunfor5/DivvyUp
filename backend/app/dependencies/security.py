@@ -14,7 +14,7 @@ from app.dependencies.config import settings
 from app.dependencies.database import get_session
 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
+ACCESS_TOKEN_EXPIRE_MINUTES = 60  # 1 hour
 FALLBACK_EMOJI = ":pile_of_poo:"
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")

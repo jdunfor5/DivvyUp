@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 from app.dependencies.database import check_db_connection, init_db
 from app.dependencies.config import settings
+from app.api.middleware.error_handler import ErrorHandlerMiddleware
 
 # Import all models so SQLModel sees them before create_all runs
 import app.models.user
@@ -23,12 +24,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="DivvyUp API", lifespan=lifespan)
 
+app.add_middleware(ErrorHandlerMiddleware)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 load_routers(app)

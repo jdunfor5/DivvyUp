@@ -5,6 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from ...models.user import User
 from ...dependencies.security import verify_password, create_access_token
+from ...dependencies.logging import get_logger
+
+logger = get_logger(__name__)
 
 # POST: Login endpoint
 async def login(db: AsyncSession, form: OAuth2PasswordRequestForm):
@@ -13,8 +16,8 @@ async def login(db: AsyncSession, form: OAuth2PasswordRequestForm):
         result = await db.execute(statement)
         user = result.scalar_one_or_none()
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error during login for %s: %s", form.username, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     if not user or not verify_password(form.password, user.password_hash):
         raise HTTPException(

@@ -10,6 +10,9 @@ from ...models.recurring import RecurringExpense, RecurringExpenseCreate, Recurr
 from ...models.expense import Expense, ExpenseSplit
 from ...models.group import GroupMember, GroupMemberRole
 from ...models.user import UserRead
+from ...dependencies.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def _advance_date(current: date, interval: RecurrenceInterval) -> date:
@@ -52,8 +55,8 @@ async def create(db: AsyncSession, current_user: UserRead, group_uuid: UUID, req
         await db.commit()
         await db.refresh(new_recurring)
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error creating recurring expense in group %s: %s", group_uuid, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     return new_recurring
 
@@ -64,8 +67,8 @@ async def read_all(db: AsyncSession, current_user: UserRead, group_uuid: UUID):
         result = await db.execute(statement)
         recurring_expenses = result.scalars().all()
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error reading recurring expenses for group %s: %s", group_uuid, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     return recurring_expenses
 
@@ -77,10 +80,10 @@ async def read(db: AsyncSession, current_user: UserRead, group_uuid: UUID, recur
         recurring = result.scalar_one_or_none()
 
         if not recurring:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{recurring_uuid} is an invalid recurring expense identifier.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recurring expense not found.")
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error reading recurring expense %s: %s", recurring_uuid, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     return recurring
 
@@ -92,7 +95,7 @@ async def update(db: AsyncSession, current_user: UserRead, group_uuid: UUID, rec
         recurring = result.scalar_one_or_none()
 
         if not recurring:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{recurring_uuid} is an invalid recurring expense identifier.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recurring expense not found.")
 
         is_creator = recurring.created_by == current_user.id
         member_result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid, GroupMember.user_id == current_user.id))
@@ -108,8 +111,8 @@ async def update(db: AsyncSession, current_user: UserRead, group_uuid: UUID, rec
         await db.commit()
         await db.refresh(recurring)
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error updating recurring expense %s: %s", recurring_uuid, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     return recurring
 
@@ -121,7 +124,7 @@ async def deactivate(db: AsyncSession, current_user: UserRead, group_uuid: UUID,
         recurring = result.scalar_one_or_none()
 
         if not recurring:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"{recurring_uuid} is an invalid recurring expense identifier.")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recurring expense not found.")
 
         is_creator = recurring.created_by == current_user.id
         member_result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid, GroupMember.user_id == current_user.id))
@@ -134,8 +137,8 @@ async def deactivate(db: AsyncSession, current_user: UserRead, group_uuid: UUID,
         recurring.is_active = False
         await db.commit()
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        logger.warning("Database error deactivating recurring expense %s: %s", recurring_uuid, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
 
     return None
 
@@ -175,7 +178,6 @@ async def generate_due(db: AsyncSession):
             db.add(new_expense)
             await db.flush()
 
-            # Equal split among group members
             members_result = await db.execute(select(GroupMember).where(GroupMember.group_id == recurring.group_id))
             members = members_result.scalars().all()
             num_members = len(members)
@@ -200,7 +202,7 @@ async def generate_due(db: AsyncSession):
 
         await db.commit()
     except SQLAlchemyError as e:
-        error = str(e.__dict__["orig"])
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=error)
+        logger.error("Database error generating due recurring expenses: %s", e)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An error occurred")
 
     return {"message": f"Generated {generated} expense(s)."}
