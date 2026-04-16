@@ -28,7 +28,7 @@ function getFriendStatus(balance) {
     return {
       label: 'Owes you',
       tone: 'success',
-      note: 'This friend currently owes you money.',
+      note: 'This friend owes you.',
     }
   }
 
@@ -158,10 +158,6 @@ function FriendsTab({ currentUser, groups = [] }) {
     )
   }, [friends])
 
-  const suggestedGroups = useMemo(() => {
-    return groups.slice(0, 3).map(group => group.name)
-  }, [groups])
-
   const existingFriendIds = useMemo(() => new Set(friends.map(friend => friend.id)), [friends])
 
   return (
@@ -248,7 +244,10 @@ function FriendsTab({ currentUser, groups = [] }) {
                         <p className="friend-note">{status.note}</p>
                         <div className="friend-groups">
                           <span>{formatAddedDate(friend.added_at)}</span>
-                          {balance === 0 ? <span>No pending settlement</span> : <span>Balance updated automatically</span>}
+                          {friend.shared_group_ids?.length > 0
+                            ? <span>Shared groups: {friend.shared_group_ids.map(id => groups.find(g => g.id === id)?.name).filter(Boolean).join(', ')}</span>
+                            : <span>No shared groups</span>
+                          }
                         </div>
                       </div>
                     </div>
@@ -338,17 +337,6 @@ function FriendsTab({ currentUser, groups = [] }) {
             )}
           </div>
 
-          <div className="card friends-side-card">
-            <div className="card-header">
-              <h2>Suggested next group</h2>
-            </div>
-            <ul className="friends-side-list">
-              {(suggestedGroups.length ? suggestedGroups : ['Create a new trip', 'Plan rent splits', 'Set up a dinner tab']).map(item => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-            <p className="friend-helper-text">These are pulled from your existing groups to help plan your next split.</p>
-          </div>
         </aside>
       </div>
     </section>

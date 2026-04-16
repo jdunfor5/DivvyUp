@@ -266,9 +266,6 @@ function App() {
 
         {/* Bottom buttons */}
         <div className="sidebar-bottom">
-          <button className="btn-add" onClick={() => setActiveView('friends')}>
-            <span id="friend-icon"></span>Friends
-          </button>
           <button className="btn-add" onClick={handleProfileUpdate}>
             <span id="profile-icon"></span>{currentUser.display_name}
           </button>

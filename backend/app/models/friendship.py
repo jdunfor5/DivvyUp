@@ -22,9 +22,10 @@ class Friendship(Base):
 # ── Pydantic Schemas ──────────────────────────────────────────
 
 class FriendRead(BaseModel):
-    id:           uuid.UUID
-    email:        str
-    display_name: str
-    avatar_emoji: str
-    added_at:     datetime
-    balance:      Decimal  # positive = they owe you, negative = you owe them
+    id:               uuid.UUID
+    email:            str
+    display_name:     str
+    avatar_emoji:     str
+    added_at:         datetime
+    balance:          Decimal  # positive = they owe you, negative = you owe them
+    shared_group_ids: list[str] = []
