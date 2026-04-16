@@ -218,3 +218,86 @@
   text-align: center;
   line-height: 1.2;
 }
+
+@media (max-width: 640px) {
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal {
+    max-width: none;
+    width: 100%;
+    max-height: 92vh;
+    overflow-y: auto;
+    border-radius: 18px 18px 0 0;
+    padding: 20px 16px 24px;
+  }
+
+  .modal-header {
+    margin-bottom: 18px;
+  }
+
+  .modal-header h2 {
+    font-size: 17px;
+  }
+
+  .modal-close {
+    padding: 8px;
+    font-size: 24px;
+  }
+
+  .expense-form {
+    gap: 14px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .form-group input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .split-type-options {
+    flex-direction: column;
+  }
+
+  .split-type-btn {
+    min-height: 44px;
+    font-size: 13px;
+  }
+
+  .split-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .split-input-wrap {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .btn-secondary,
+  .form-actions .btn-primary {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .category-options {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .category-btn {
+    min-height: 74px;
+    padding: 10px 6px;
+  }
+}
