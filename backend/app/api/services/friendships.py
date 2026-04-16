@@ -45,16 +45,23 @@ async def list_friends(db: AsyncSession, current_user: UserRead):
         )
         rows = result.all()
 
+        my_groups = await db.execute(select(GroupMember.group_id).where(GroupMember.user_id == current_user.id))
+        my_group_ids = {row[0] for row in my_groups.all()}
+
         friends = []
         for user, added_at in rows:
+            friend_groups = await db.execute(select(GroupMember.group_id).where(GroupMember.user_id == user.id))
+            shared_group_ids = [str(row[0]) for row in friend_groups.all() if row[0] in my_group_ids]
+
             balance = await _calculate_balance(db, current_user.id, user.id)
             friends.append({
-                "id":           user.id,
-                "email":        user.email,
-                "display_name": user.display_name,
-                "avatar_emoji":   user.avatar_emoji,
-                "added_at":     added_at,
-                "balance":      balance,
+                "id":               user.id,
+                "email":            user.email,
+                "display_name":     user.display_name,
+                "avatar_emoji":     user.avatar_emoji,
+                "added_at":         added_at,
+                "balance":          balance,
+                "shared_group_ids": shared_group_ids,
             })
     except SQLAlchemyError as e:
         logger.warning("Database error listing friends for user %s: %s", current_user.id, e)

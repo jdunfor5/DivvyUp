@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
+import FriendsTab from './components/FriendsTab'
 import Profile from './pages/Profile'
 import { getToken, getCurrentUser, clearToken, getGroups, createGroup, deleteGroup, joinGroup, getGroupMembers } from './api'
 import './App.css'
@@ -11,7 +12,7 @@ function App() {
   const [groups, setGroups] = useState([])
   const [selectedGroupId, setSelectedGroupId] = useState(null)
   const [groupsOpen, setGroupsOpen] = useState(true)
-  const [friendsOpen, setFriendsOpen] = useState(true)
+  const [activeView, setActiveView] = useState('groups')
   const [creatingGroup, setCreatingGroup] = useState(false)
   const [newGroupName, setNewGroupName] = useState('')
   const [joiningGroup, setJoiningGroup] = useState(false)
@@ -132,6 +133,7 @@ function App() {
 
   function handleSelectGroup(groupId) {
     setSelectedGroupId(groupId)
+    setActiveView('groups')
   }
 
   if (!authChecked) return null
@@ -187,7 +189,7 @@ function App() {
                   {groups.map(g => (
                     <li
                       key={g.id}
-                      className={`dropdown-item ${g.id === selectedGroupId ? 'active' : ''}`}
+                      className={`dropdown-item ${activeView === 'groups' && g.id === selectedGroupId ? 'active' : ''}`}
                       onClick={() => handleSelectGroup(g.id)}
                     >
                       <span className="item-avatar group-avatar">{g.name[0]}</span>
@@ -252,35 +254,18 @@ function App() {
             )}
           </div>
 
-          {/* Friends Dropdown */}
-          <div className="sidebar-dropdown">
-            <button
-              className={`dropdown-toggle ${friendsOpen ? 'open' : ''}`}
-              onClick={() => setFriendsOpen(o => !o)}
-            >
-              <span className="dropdown-toggle-left">
-                <span className="nav-icon">🙋</span>
-                <span>Friends</span>
-              </span>
-              <span className="chevron">{friendsOpen ? '▾' : '▸'}</span>
-            </button>
-            {friendsOpen && (
-              <ul className="dropdown-list">
-                <li className="dropdown-item">
-                  <span className="item-avatar friend-avatar">FR</span>
-                  <span className="item-label">Friends feature coming soon</span>
-                </li>
-              </ul>
-            )}
-          </div>
+          <button
+            className={`sidebar-tab-button ${activeView === 'friends' ? 'active' : ''}`}
+            onClick={() => setActiveView('friends')}
+          >
+            <span className="sidebar-tab-button__icon">🙋</span>
+            <span>Friends</span>
+          </button>
 
         </div>
 
         {/* Bottom buttons */}
         <div className="sidebar-bottom">
-          <button className="btn-add">
-            <span id="friend-icon"></span>Add Friend
-          </button>
           <button className="btn-add" onClick={handleProfileUpdate}>
             <span id="profile-icon"></span>{currentUser.display_name}
           </button>
@@ -291,7 +276,11 @@ function App() {
       </nav>
 
       <main className="main-content">
-        <Dashboard groups={groups} selectedGroupId={selectedGroupId} onSelectGroup={handleSelectGroup} />
+        {activeView === 'friends' ? (
+          <FriendsTab currentUser={currentUser} groups={groups} />
+        ) : (
+          <Dashboard groups={groups} selectedGroupId={selectedGroupId} onSelectGroup={handleSelectGroup} />
+        )}
       </main>
       {showProfile && (
         <Profile
