@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { getExpenseComments, createExpenseComment } from '../api'
 import './TransactionList.css'
 
-function TransactionList({ transactions, groupId, currentUserId, groupMembers }) {
+function TransactionList({ transactions, groupId, currentUserId, groupMembers, onEdit, onDelete }) {
   const [commentsByExpense, setCommentsByExpense] = useState({})
   const [drafts, setDrafts] = useState({})
   const [openExpenseId, setOpenExpenseId] = useState(null)
@@ -58,7 +58,7 @@ function TransactionList({ transactions, groupId, currentUserId, groupMembers })
   return (
     <div className="transaction-list card">
       <div className="card-header">
-        <h2>Recent Transactions</h2>
+        <h2>Recent Expenses</h2>
         <button className="btn-link">View all</button>
       </div>
       <ul>
@@ -78,6 +78,24 @@ function TransactionList({ transactions, groupId, currentUserId, groupMembers })
                   >
                     💬 {((commentsByExpense[tx.id] || []).length)}
                   </button>
+                  {onEdit && (
+                    <button
+                      className="btn-edit"
+                      onClick={() => onEdit(tx.id)}
+                      title="Edit"
+                    >
+                      ✎
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      className="btn-delete"
+                      onClick={() => onDelete(tx.id)}
+                      title="Delete"
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
                 {openExpenseId === tx.id && (
                   <div className="expense-comment-panel">
