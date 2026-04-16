@@ -29,3 +29,6 @@
 }
 
 .progress-fill.warning { background: var(--expense); }
+
+.budget-pct { color: var(--text-secondary); }
+.budget-empty { font-size: 13px; color: var(--text-secondary); padding: 8px 0; }

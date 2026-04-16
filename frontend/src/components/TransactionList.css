@@ -26,7 +26,7 @@
   flex-shrink: 0;
 }
 
-[data-category="Groceries"] { background: #b45309; }
+[data-category="Groceries"] { background: #22c55e; }
 [data-category="Food & Drink"] { background: #f59e0b; }
 [data-category="Transport"] { background: #3b82f6; }
 [data-category="Housing"] { background: #ef4444; }
@@ -34,7 +34,7 @@
 [data-category="Shopping"] { background: #ec4899; }
 [data-category="Travel"] { background: #06b6d4; }
 [data-category="Utilities"] { background: #4f46e5; }
-[data-category="Health"] { background: #22c55e; }
+[data-category="Health"] { background: #b45309; }
 [data-category="Other"] { background: #14b8a6; }
 
 .transaction-desc {
