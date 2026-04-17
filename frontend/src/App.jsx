@@ -41,6 +41,8 @@ function App() {
 
   useEffect(() => {
     if (currentUser) {
+      setGroups([])
+      setSelectedGroupId(null)
       loadGroups()
     }
   }, [currentUser])

@@ -91,78 +91,80 @@ function TransactionList({ transactions, groupId, currentUserId, groupMembers, o
       <ul>
         {visible.map((tx) => (
           <li key={tx.id} className="transaction-item">
-            <div className="transaction-left">
-              <div className="transaction-category-dot" data-category={tx.category} />
-              <div>
-                <p className="transaction-desc">{tx.description}</p>
-                <p className="transaction-date">
-                  {tx.date} · {tx.category}{tx.paidByName ? ` · Paid by ${tx.paidByName}` : ''}{tx.splitType ? ` · ${SPLIT_LABELS[tx.splitType] || tx.splitType}` : ''}
-                </p>
-                <div className="transaction-actions">
-                  <button
-                    className={`btn-comment-toggle${openExpenseId === tx.id ? ' open' : ''}`}
-                    onClick={() => {
-                      const next = openExpenseId === tx.id ? null : tx.id
-                      setOpenExpenseId(next)
-                      if (next) loadComments(next)
-                    }}
-                  >
-                    🗨 {((commentsByExpense[tx.id] || []).length)}
-                  </button>
-                  {onEdit && (
-                    <button
-                      className="btn-edit"
-                      onClick={() => onEdit(tx.id)}
-                      title="Edit"
-                    >
-                      ✎
-                    </button>
-                  )}
-                  {onDelete && (
-                    <button
-                      className="btn-delete"
-                      onClick={() => onDelete(tx.id)}
-                      title="Delete"
-                    >
-                      ✕
-                    </button>
-                  )}
+            <div className="transaction-main-row">
+              <div className="transaction-left">
+                <div className="transaction-category-dot" data-category={tx.category} />
+                <div style={{ minWidth: 0 }}>
+                  <p className="transaction-desc">{tx.description}</p>
+                  <p className="transaction-date">
+                    {tx.date} · {tx.category}{tx.paidByName ? ` · Paid by ${tx.paidByName}` : ''}{tx.splitType ? ` · ${SPLIT_LABELS[tx.splitType] || tx.splitType}` : ''}
+                  </p>
                 </div>
-                {openExpenseId === tx.id && (
-                  <div className="expense-comment-panel">
-                    <div className="comment-list">
-                      {(commentsByExpense[tx.id] || []).map(comment => (
-                        <div key={comment.id} className="comment-row">
-                          <div className="comment-meta">
-                            <span className="comment-sender">
-                              {comment.user_id === currentUserId ? 'You' : memberNames[comment.user_id] || 'Member'}
-                            </span>
-                            <span className="comment-date">{new Date(comment.created_at).toLocaleString()}</span>
-                          </div>
-                          <p className="comment-body">{comment.body}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <textarea
-                      className="comment-input"
-                      placeholder="Write a comment..."
-                      value={drafts[tx.id] || ''}
-                      onChange={e => handleDraftChange(tx.id, e.target.value)}
-                    />
-                    <button
-                      className="btn-primary btn-comment-submit"
-                      onClick={() => handleCreateComment(tx.id)}
-                      disabled={loadingComment || !(drafts[tx.id] || '').trim()}
-                    >
-                      Post comment
-                    </button>
-                  </div>
-                )}
               </div>
+              <p className={`transaction-amount ${tx.amount < 0 ? 'negative' : 'positive'}`}>
+                {tx.amount < 0 ? '-' : '+'}${Math.abs(tx.amount).toFixed(2)}
+              </p>
             </div>
-            <p className={`transaction-amount ${tx.amount < 0 ? 'negative' : 'positive'}`}>
-              {tx.amount < 0 ? '-' : '+'}${Math.abs(tx.amount).toFixed(2)}
-            </p>
+            <div className="transaction-actions">
+              <button
+                className={`btn-comment-toggle${openExpenseId === tx.id ? ' open' : ''}`}
+                onClick={() => {
+                  const next = openExpenseId === tx.id ? null : tx.id
+                  setOpenExpenseId(next)
+                  if (next) loadComments(next)
+                }}
+              >
+                🗨 {((commentsByExpense[tx.id] || []).length)}
+              </button>
+              {onEdit && (
+                <button
+                  className="btn-edit"
+                  onClick={() => onEdit(tx.id)}
+                  title="Edit"
+                >
+                  ✎
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  className="btn-delete"
+                  onClick={() => onDelete(tx.id)}
+                  title="Delete"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            {openExpenseId === tx.id && (
+              <div className="expense-comment-panel">
+                <div className="comment-list">
+                  {(commentsByExpense[tx.id] || []).map(comment => (
+                    <div key={comment.id} className="comment-row">
+                      <div className="comment-meta">
+                        <span className="comment-sender">
+                          {comment.user_id === currentUserId ? 'You' : memberNames[comment.user_id] || 'Member'}
+                        </span>
+                        <span className="comment-date">{new Date(comment.created_at).toLocaleString()}</span>
+                      </div>
+                      <p className="comment-body">{comment.body}</p>
+                    </div>
+                  ))}
+                </div>
+                <textarea
+                  className="comment-input"
+                  placeholder="Write a comment..."
+                  value={drafts[tx.id] || ''}
+                  onChange={e => handleDraftChange(tx.id, e.target.value)}
+                />
+                <button
+                  className="btn-primary btn-comment-submit"
+                  onClick={() => handleCreateComment(tx.id)}
+                  disabled={loadingComment || !(drafts[tx.id] || '').trim()}
+                >
+                  Post comment
+                </button>
+              </div>
+            )}
           </li>
         ))}
       </ul>

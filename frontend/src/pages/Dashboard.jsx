@@ -302,8 +302,8 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
 
   const monthlyExpenses = expenses
     .filter(exp => {
-      const expDate = new Date(exp.expense_date)
-      return expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear
+      const [y, m] = exp.expense_date.split('-').map(Number)
+      return m - 1 === currentMonth && y === currentYear
     })
     .reduce((sum, exp) => sum + Number(exp.amount), 0)
 
