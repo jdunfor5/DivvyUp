@@ -116,7 +116,7 @@ function TransactionList({ transactions, groupId, currentUserId, groupMembers, o
               >
                 🗨 {((commentsByExpense[tx.id] || []).length)}
               </button>
-              {onEdit && (
+              {onEdit && !tx.isRecurring && (
                 <button
                   className="btn-edit"
                   onClick={() => onEdit(tx.id)}

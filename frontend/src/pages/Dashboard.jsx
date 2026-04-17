@@ -84,13 +84,13 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup, onRefreshGroup
   async function handleEditExpense(expenseId) {
     const raw = expenses.find(e => e.id === expenseId)
     if (!raw) return
-    setEditingExpense(raw)
     try {
       const splits = await getExpenseSplits(selectedGroup.id, expenseId)
       setEditingExpenseSplits(splits)
     } catch {
       setEditingExpenseSplits([])
     }
+    setEditingExpense(raw)
   }
 
   async function handleExpenseSubmit(body) {
@@ -121,13 +121,13 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup, onRefreshGroup
   }
 
   async function handleEditRecurring(recurring) {
-    setEditingRecurring(recurring)
     try {
       const splits = await getRecurringSplits(selectedGroup.id, recurring.id)
       setEditingRecurringSplits(splits)
     } catch {
       setEditingRecurringSplits([])
     }
+    setEditingRecurring(recurring)
   }
 
   async function handleEditRecurringSubmit(body) {
@@ -270,6 +270,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup, onRefreshGroup
       category: categories.find(c => c.id === exp.category_id)?.name || 'Misc',
       paidByName: exp.paid_by_name || null,
       splitType: exp.split_type || null,
+      isRecurring: !!exp.recurring_expense_id,
     }))
     .sort((a, b) => {
       const dateDiff = new Date(b.date) - new Date(a.date)
@@ -352,9 +353,9 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup, onRefreshGroup
 
       <div className="summary-cards">
         <SummaryCard title="Monthly Expenses" amount={monthlyExpenses} type="expense" />
-        <SummaryCard title="Your Balance" amount={Number(userBalance)} type="balance" />
-        <SummaryCard title="Upcoming (30 days)" amount={upcomingTotal} type="upcoming" />
         <SummaryCard title="Group Owes You" amount={groupOwesYou} type="owed" />
+        <SummaryCard title="Upcoming (30 days)" amount={upcomingTotal} type="upcoming" />
+        <SummaryCard title="Your Balance" amount={Number(userBalance)} type="balance" />
       </div>
 
       <div className="dashboard-grid">

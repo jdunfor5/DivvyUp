@@ -211,12 +211,14 @@ def _build_splits(
 
     elif split_type == SplitType.percentage:
         lookup = {s.user_id: s.percentage or Decimal("0") for s in (member_splits or [])}
+        logger.info("_build_splits percentage: payer=%s lookup_keys=%s member_ids=%s", payer_id, list(lookup.keys()), [m.user_id for m in members])
         for member in members:
             if member.user_id == payer_id:
                 member_share = Decimal("0.00")
             else:
                 pct = lookup.get(member.user_id, Decimal("0"))
                 member_share = (base * pct / Decimal("100")).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+                logger.info("_build_splits: member=%s pct=%s share=%s", member.user_id, pct, member_share)
             splits.append(ExpenseSplit(expense_id=expense_id, user_id=member.user_id, share_amount=member_share))
 
     return splits

@@ -212,10 +212,12 @@ async def generate_due(db: AsyncSession):
                         select(RecurringExpenseSplit).where(RecurringExpenseSplit.recurring_expense_id == recurring.id)
                     )
                     stored = splits_result.scalars().all()
+                    logger.info("generate_due: recurring=%s split_type=%s stored_splits=%s", recurring.id, recurring.split_type, [(s.user_id, s.share_amount, s.share_percentage) for s in stored])
                     member_splits = [
                         MemberSplit(user_id=s.user_id, amount=s.share_amount, percentage=s.share_percentage)
                         for s in stored
                     ]
+                    logger.info("generate_due: member_splits=%s", [(ms.user_id, ms.amount, ms.percentage) for ms in member_splits])
                 db.add_all(_build_splits(new_expense.id, members, recurring.base_amount, recurring.paid_by, recurring.split_type, member_splits))
 
             recurring.last_generated_date = today
