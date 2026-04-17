@@ -387,6 +387,8 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
 
       {showRecurringForm && (
         <RecurringExpenseForm
+          members={members}
+          currentUserId={currentUser?.id}
           categories={categories}
           onSubmit={handleRecurringSubmit}
           onClose={() => setShowRecurringForm(false)}
@@ -395,6 +397,8 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
 
       {editingRecurring && (
         <RecurringExpenseForm
+          members={members}
+          currentUserId={currentUser?.id}
           categories={categories}
           initialValues={editingRecurring}
           onSubmit={handleEditRecurringSubmit}

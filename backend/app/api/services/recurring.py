@@ -1,16 +1,17 @@
 from uuid import UUID
 from datetime import date
 from dateutil.relativedelta import relativedelta
-from decimal import Decimal, ROUND_DOWN
+from decimal import Decimal
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, delete as sa_delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
-from ...models.recurring import RecurringExpense, RecurringExpenseCreate, RecurringExpenseUpdate, RecurrenceInterval
+from ...models.recurring import RecurringExpense, RecurringExpenseSplit, RecurringExpenseCreate, RecurringExpenseUpdate, RecurrenceInterval, MemberSplit, SplitType
 from ...models.expense import Expense, ExpenseSplit
 from ...models.group import GroupMember, GroupMemberRole
 from ...models.user import UserRead
 from ...dependencies.logging import get_logger
+from .expenses import _build_splits
 
 logger = get_logger(__name__)
 
@@ -54,6 +55,10 @@ async def create(db: AsyncSession, current_user: UserRead, group_uuid: UUID, req
         db.add(new_recurring)
         await db.commit()
         await db.refresh(new_recurring)
+
+        if request.split_type != SplitType.equal and request.member_splits:
+            db.add_all(_build_recurring_splits(new_recurring.id, request.member_splits, request.split_type))
+            await db.commit()
     except SQLAlchemyError as e:
         logger.warning("Database error creating recurring expense in group %s: %s", group_uuid, e)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
@@ -105,8 +110,15 @@ async def update(db: AsyncSession, current_user: UserRead, group_uuid: UUID, rec
         if not is_creator and not is_admin:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only the creator or a group admin can update a recurring expense.")
 
-        for field, value in request.model_dump(exclude_unset=True).items():
+        patch = request.model_dump(exclude_unset=True, exclude={"member_splits"})
+        for field, value in patch.items():
             setattr(recurring, field, value)
+
+        if "split_type" in patch or request.member_splits is not None:
+            await db.execute(sa_delete(RecurringExpenseSplit).where(RecurringExpenseSplit.recurring_expense_id == recurring_uuid))
+            effective_split = recurring.split_type
+            if request.member_splits and effective_split != SplitType.equal:
+                db.add_all(_build_recurring_splits(recurring_uuid, request.member_splits, effective_split))
 
         await db.commit()
         await db.refresh(recurring)
@@ -180,21 +192,19 @@ async def generate_due(db: AsyncSession):
 
             members_result = await db.execute(select(GroupMember).where(GroupMember.group_id == recurring.group_id))
             members = members_result.scalars().all()
-            num_members = len(members)
 
-            if num_members > 0:
-                share = (recurring.base_amount / num_members).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-                remainder = recurring.base_amount - (share * num_members)
-
-                splits = []
-                for member in members:
-                    member_share = share + remainder if member.user_id == recurring.paid_by else share
-                    splits.append(ExpenseSplit(
-                        expense_id   = new_expense.id,
-                        user_id      = member.user_id,
-                        share_amount = member_share,
-                    ))
-                db.add_all(splits)
+            if members:
+                member_splits = None
+                if recurring.split_type != SplitType.equal:
+                    splits_result = await db.execute(
+                        select(RecurringExpenseSplit).where(RecurringExpenseSplit.recurring_expense_id == recurring.id)
+                    )
+                    stored = splits_result.scalars().all()
+                    member_splits = [
+                        MemberSplit(user_id=s.user_id, amount=s.share_amount, percentage=s.share_percentage)
+                        for s in stored
+                    ]
+                db.add_all(_build_splits(new_expense.id, members, recurring.base_amount, recurring.paid_by, recurring.split_type, member_splits))
 
             recurring.last_generated_date = today
             recurring.next_due_date = _advance_date(recurring.next_due_date, recurring.interval)
@@ -206,3 +216,15 @@ async def generate_due(db: AsyncSession):
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An error occurred")
 
     return {"message": f"Generated {generated} expense(s)."}
+
+
+def _build_recurring_splits(recurring_id: UUID, member_splits: list[MemberSplit], split_type: SplitType) -> list:
+    splits = []
+    for s in member_splits:
+        splits.append(RecurringExpenseSplit(
+            recurring_expense_id=recurring_id,
+            user_id=s.user_id,
+            share_amount=s.amount if split_type == SplitType.exact else None,
+            share_percentage=s.percentage if split_type == SplitType.percentage else None,
+        ))
+    return splits

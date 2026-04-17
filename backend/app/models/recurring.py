@@ -10,6 +10,12 @@ from pydantic import BaseModel
 from app.dependencies.database import Base
 
 
+class MemberSplit(BaseModel):
+    user_id: uuid.UUID
+    amount: Optional[Decimal] = None
+    percentage: Optional[Decimal] = None
+
+
 class SplitType(str, Enum):
     equal = "equal"
     exact = "exact"
@@ -52,6 +58,16 @@ class RecurringExpense(Base):
 
 # ── Pydantic Schemas ──────────────────────────────────────────
 
+class RecurringExpenseSplit(Base):
+    __tablename__ = "recurring_expense_splits"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    recurring_expense_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("recurring_expenses.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    share_amount: Mapped[Optional[Decimal]] = mapped_column(Numeric(14, 2), nullable=True)
+    share_percentage: Mapped[Optional[Decimal]] = mapped_column(Numeric(7, 4), nullable=True)
+
+
 class RecurringExpenseCreate(BaseModel):
     description: str
     amount: Decimal
@@ -63,6 +79,7 @@ class RecurringExpenseCreate(BaseModel):
     interval: RecurrenceInterval
     start_date: date
     end_date: Optional[date] = None
+    member_splits: Optional[list[MemberSplit]] = None
 
 
 class RecurringExpenseUpdate(BaseModel):
@@ -75,6 +92,7 @@ class RecurringExpenseUpdate(BaseModel):
     split_type: Optional[SplitType] = None
     end_date: Optional[date] = None
     is_active: Optional[bool] = None
+    member_splits: Optional[list[MemberSplit]] = None
 
 
 class RecurringExpenseRead(BaseModel):
