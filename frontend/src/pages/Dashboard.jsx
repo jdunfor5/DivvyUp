@@ -280,6 +280,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
       name: displayName,
       initials: initialsSource.split(' ').map(n => n[0]).join('').toUpperCase(),
       avatar: mem.avatar_emoji,
+      avatarColor: mem.avatar_color || '#f2e5e7',
       owes: effectiveBalance,
       paymentsToYou,
       paymentsFromYou,

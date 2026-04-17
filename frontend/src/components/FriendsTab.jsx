@@ -232,7 +232,7 @@ function FriendsTab({ currentUser, groups = [] }) {
                 return (
                   <article className="friend-row" key={friend.id}>
                     <div className="friend-row-main">
-                      <div className="friend-badge">{friend.avatar_emoji || getInitials(friend.display_name)}</div>
+                      <div className="friend-badge" style={{ background: friend.avatar_color || "#f2e5e7" }}>{friend.avatar_emoji || getInitials(friend.display_name)}</div>
                       <div>
                         <div className="friend-row-heading">
                           <h3>{friend.display_name}</h3>
