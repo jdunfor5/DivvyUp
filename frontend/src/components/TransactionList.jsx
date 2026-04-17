@@ -97,7 +97,7 @@ function TransactionList({ transactions, groupId, currentUserId, groupMembers, o
                 <div style={{ minWidth: 0 }}>
                   <p className="transaction-desc">{tx.description}</p>
                   <p className="transaction-date">
-                    {tx.date} · {tx.category}{tx.paidByName ? ` · Paid by ${tx.paidByName}` : ''}{tx.splitType ? ` · ${SPLIT_LABELS[tx.splitType] || tx.splitType}` : ''}
+                    {tx.date} · {tx.category}{tx.paidByName ? ` · Paid by ${tx.paidByName}` : ''}{tx.splitType ? ` · ${SPLIT_LABELS[tx.splitType] || tx.splitType}` : ''}{tx.isRecurring ? ' · Recurring' : ''}
                   </p>
                 </div>
               </div>

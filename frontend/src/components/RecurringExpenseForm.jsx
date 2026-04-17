@@ -29,7 +29,7 @@ function RecurringExpenseForm({ members = [], currentUserId, categories = [], on
     if (!initialSplits?.length) return {}
     return Object.fromEntries(initialSplits.map(s => [
       s.user_id,
-      { amount: s.share_amount ?? '', percentage: s.share_percentage ?? '' },
+      { amount: s.share_amount != null ? parseFloat(s.share_amount) : '', percentage: s.share_percentage != null ? parseFloat(s.share_percentage) : '' },
     ]))
   })
   const [error, setError] = useState(null)
