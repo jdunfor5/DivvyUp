@@ -7,6 +7,7 @@ export default function Login({ onLogin }) {
   const [password, setPassword] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [confirmPassword, setConfirmPassword] = useState('')
 
   const AVATARS = ['😊','😎','🤠','🥳','🦊','🐼','🐸','🦁','🐯','🐧','🦄','🐙','🦋','🌻','⭐','🍕','🎸','🚀','🏄','🎯']
   function randomAvatar() { return AVATARS[Math.floor(Math.random() * AVATARS.length)] }
@@ -16,6 +17,10 @@ export default function Login({ onLogin }) {
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
+    if (mode === 'signup' && password !== confirmPassword) {
+      setError('Passwords do not match.')
+      return
+    }
     setLoading(true)
     try {
       if (mode === 'signup') {
@@ -39,6 +44,7 @@ export default function Login({ onLogin }) {
     setError(null)
     setEmail('')
     setPassword('')
+    setConfirmPassword('')
     setDisplayName('')
     setShowPassword(false)
   }
@@ -121,6 +127,22 @@ export default function Login({ onLogin }) {
               {showPassword ? '🙈' : '👁️'}
             </button>
           </div>
+
+          {mode === 'signup' && (
+            <>
+              <label style={s.label}>Confirm Password</label>
+              <div style={s.passwordRow}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  style={{ ...s.input, flex: 1, marginBottom: 0 }}
+                />
+              </div>
+            </>
+          )}
 
           {error && <p style={s.error}>{error}</p>}
 
