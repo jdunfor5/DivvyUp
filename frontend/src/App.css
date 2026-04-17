@@ -1013,17 +1013,16 @@ body {
 }
 
 @media (max-width: 1100px) {
-  .friends-summary-grid,
-  .friends-layout {
+  .friends-summary-grid {
     grid-template-columns: 1fr 1fr;
   }
 
   .friends-layout {
-    align-items: stretch;
+    grid-template-columns: 1fr;
   }
 
   .friends-side {
-    grid-column: span 2;
+    width: 100%;
   }
 }
 
