@@ -1,4 +1,7 @@
-.dashboard {}
+.dashboard {
+  position: relative;
+  z-index: 1;
+}
 
 .dashboard-header {
   display: flex;

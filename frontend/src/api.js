@@ -129,6 +129,10 @@ export async function joinGroup(inviteCode) {
   return api('/groups/join', { method: 'POST', body: JSON.stringify({ invite_code: inviteCode }) })
 }
 
+export async function renameGroup(groupId, name) {
+  return api(`/groups/${groupId}`, { method: 'PATCH', body: JSON.stringify({ name }) })
+}
+
 // ── Settlements ──────────────────────────────────────────────
 
 // ── Expenses ─────────────────────────────────────────────────

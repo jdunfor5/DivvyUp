@@ -159,6 +159,7 @@ async def read_current_user_groups(db: AsyncSession, current_user: UserRead):
             select(Group)
             .join(GroupMember, Group.id == GroupMember.group_id)
             .where(GroupMember.user_id == current_user.id)
+            .order_by(Group.created_at)
         )
         result = await db.execute(statement)
         groups = result.scalars().all()

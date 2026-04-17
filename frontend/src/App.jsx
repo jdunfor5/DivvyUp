@@ -3,7 +3,7 @@ import Dashboard from './pages/Dashboard'
 import Login from './pages/Login'
 import FriendsTab from './components/FriendsTab'
 import Profile from './pages/Profile'
-import { getToken, getCurrentUser, clearToken, getGroups, createGroup, deleteGroup, joinGroup, getGroupMembers } from './api'
+import { getToken, getCurrentUser, clearToken, getGroups, createGroup, deleteGroup, joinGroup, getGroupMembers, renameGroup } from './api'
 import './App.css'
 
 function App() {
@@ -17,6 +17,8 @@ function App() {
   const [newGroupName, setNewGroupName] = useState('')
   const [joiningGroup, setJoiningGroup] = useState(false)
   const [inviteCode, setInviteCode] = useState('')
+  const [renamingGroupId, setRenamingGroupId] = useState(null)
+  const [renameValue, setRenameValue] = useState('')
   const [showProfile, setShowProfile] = useState(false)
 
   // On load, restore session from stored token
@@ -85,6 +87,18 @@ function App() {
       loadGroups()
     } catch (err) {
       showToast(`Failed to create group. See: ${err.message}`, "error")
+    }
+  }
+
+  async function handleRenameGroup(groupId) {
+    if (!renameValue.trim()) return
+    try {
+      await renameGroup(groupId, renameValue.trim())
+      setRenamingGroupId(null)
+      setRenameValue('')
+      loadGroups()
+    } catch (err) {
+      showToast(`Failed to rename group. See: ${err.message}`, 'error')
     }
   }
 
@@ -175,7 +189,7 @@ function App() {
     <div className="app">
       <nav className="sidebar">
         <div className="sidebar-logo">
-          <div className="logo-icon">💰</div>
+          <div className="logo-icon">D</div>
           <span className="logo-text">DivvyUp</span>
         </div>
 
@@ -184,11 +198,11 @@ function App() {
           {/* Groups Dropdown */}
           <div className="sidebar-dropdown">
             <button
-              className={`dropdown-toggle ${groupsOpen ? 'open' : ''}`}
+              className={`dropdown-toggle ${groupsOpen ? 'open' : ''} ${activeView === 'groups' ? 'active' : ''}`}
               onClick={() => setGroupsOpen(o => !o)}
             >
               <span className="dropdown-toggle-left">
-                <span className="nav-icon">👥</span>
+                <span className="nav-icon">≡</span>
                 <span>Groups</span>
               </span>
               <span className="chevron">{groupsOpen ? '▾' : '▸'}</span>
@@ -206,25 +220,36 @@ function App() {
                       <span className="item-label">{g.name}</span>
                       <div className="item-actions">
                         <span className="item-count">{g.memberCount ?? (g.members?.length || 1)}</span>
-                        <button 
-                          className="btn-share" 
+                        <button
+                          className="btn-share"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setRenameValue(g.name)
+                            setRenamingGroupId(g.id)
+                          }}
+                          title="Rename group"
+                        >
+                          ✎
+                        </button>
+                        <button
+                          className="btn-share"
                           onClick={(e) => {
                             e.stopPropagation()
                             copyInviteCode(g.invite_code)
                           }}
                           title="Copy invite code"
                         >
-                          📋
+                          ⧉
                         </button>
-                        <button 
-                          className="btn-delete" 
+                        <button
+                          className="btn-share"
                           onClick={(e) => {
                             e.stopPropagation()
                             handleDeleteGroup(g.id)
                           }}
                           title="Delete group"
                         >
-                          🗑️
+                          ✕
                         </button>
                       </div>
                     </li>
@@ -268,7 +293,7 @@ function App() {
             className={`sidebar-tab-button ${activeView === 'friends' ? 'active' : ''}`}
             onClick={() => setActiveView('friends')}
           >
-            <span className="sidebar-tab-button__icon">🙋</span>
+            <span className="sidebar-tab-button__icon">⊛</span>
             <span>Friends</span>
           </button>
 
@@ -286,6 +311,8 @@ function App() {
       </nav>
 
       <main className="main-content">
+        <div className="bg-blob" style={{ width: 220, height: 220, top: '60%', left: '-60px', background: 'rgba(154,79,89,0.22)' }} />
+        <div className="bg-blob" style={{ width: 300, height: 300, top: '10%', right: '5%', background: 'rgba(255,255,255,0.04)' }} />
         {activeView === 'friends' ? (
           <FriendsTab currentUser={currentUser} groups={groups} />
         ) : (
@@ -299,6 +326,31 @@ function App() {
           onClose={() => setShowProfile(false)}
           onDeleteAccount={handleDeleteAccount}
         />
+      )}
+      {renamingGroupId && (
+        <div className="modal-overlay" onClick={() => { setRenamingGroupId(null); setRenameValue('') }}>
+          <div className="modal rename-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Rename Group</h2>
+              <button className="modal-close" onClick={() => { setRenamingGroupId(null); setRenameValue('') }}>×</button>
+            </div>
+            <input
+              className="rename-modal-input"
+              value={renameValue}
+              autoFocus
+              onChange={e => setRenameValue(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') handleRenameGroup(renamingGroupId)
+                if (e.key === 'Escape') { setRenamingGroupId(null); setRenameValue('') }
+              }}
+              placeholder="Group name"
+            />
+            <div className="rename-modal-actions">
+              <button className="btn-secondary" onClick={() => { setRenamingGroupId(null); setRenameValue('') }}>Cancel</button>
+              <button className="btn-primary" onClick={() => handleRenameGroup(renamingGroupId)}>Save</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

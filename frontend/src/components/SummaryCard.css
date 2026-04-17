@@ -16,7 +16,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--accent-light);
+  background: #FEE2E2;
 }
 
 .summary-card--income .summary-card-icon { background: #dcfce7; }
