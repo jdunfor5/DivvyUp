@@ -1,18 +1,6 @@
 import { useState } from 'react'
 import './ExpenseForm.css'
-
-const CATEGORY_COLORS = {
-  'Groceries':     '#b45309',
-  'Food & Drink':  '#f59e0b',
-  'Transport':     '#3b82f6',
-  'Housing':       '#ef4444',
-  'Entertainment': '#8b5cf6',
-  'Shopping':      '#ec4899',
-  'Travel':        '#06b6d4',
-  'Utilities':     '#4f46e5',
-  'Health':        '#22c55e',
-  'Other':         '#14b8a6',
-}
+import { CATEGORY_COLORS } from '../constants/categories'
 
 const INTERVALS = [
   { value: 'daily',    label: 'Daily' },
@@ -22,7 +10,13 @@ const INTERVALS = [
   { value: 'yearly',   label: 'Yearly' },
 ]
 
-function RecurringExpenseForm({ categories = [], onSubmit, onClose, initialValues = null }) {
+const SPLIT_TYPES = [
+  { value: 'equal',      label: 'Split equally' },
+  { value: 'exact',      label: 'Exact amounts' },
+  { value: 'percentage', label: 'By percentage' },
+]
+
+function RecurringExpenseForm({ members = [], currentUserId, categories = [], onSubmit, onClose, initialValues = null }) {
   const isEdit = initialValues !== null
   const [description, setDescription] = useState(initialValues?.description ?? '')
   const [amount, setAmount] = useState(initialValues?.amount ?? '')
@@ -30,9 +24,20 @@ function RecurringExpenseForm({ categories = [], onSubmit, onClose, initialValue
   const [interval, setInterval] = useState(initialValues?.interval ?? 'monthly')
   const [startDate, setStartDate] = useState(initialValues?.start_date ?? new Date().toISOString().split('T')[0])
   const [endDate, setEndDate] = useState(initialValues?.end_date ?? '')
+  const [splitType, setSplitType] = useState(initialValues?.split_type ?? 'equal')
+  const [memberSplits, setMemberSplits] = useState({})
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [hoveredCat, setHoveredCat] = useState(null)
+
+  const nonPayers = members.filter(m => m.user_id !== currentUserId)
+
+  function updateSplit(userId, field, value) {
+    setMemberSplits(prev => ({
+      ...prev,
+      [userId]: { ...prev[userId], [field]: value },
+    }))
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -51,10 +56,18 @@ function RecurringExpenseForm({ categories = [], onSubmit, onClose, initialValue
       currency: 'USD',
       exchange_rate: 1,
       category_id: categoryId,
-      split_type: 'equal',
+      split_type: splitType,
       interval,
       start_date: startDate,
       end_date: endDate || null,
+    }
+
+    if ((splitType === 'exact' || splitType === 'percentage') && nonPayers.length > 0) {
+      const field = splitType === 'exact' ? 'amount' : 'percentage'
+      body.member_splits = nonPayers.map(m => ({
+        user_id: m.user_id,
+        [field]: parseFloat(memberSplits[m.user_id]?.[field] || 0),
+      }))
     }
 
     setSubmitting(true)
@@ -167,6 +180,71 @@ function RecurringExpenseForm({ categories = [], onSubmit, onClose, initialValue
                   )
                 })}
               </div>
+            </div>
+          )}
+
+          <div className="form-group">
+            <label>Split type</label>
+            <div className="split-type-options">
+              {SPLIT_TYPES.map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  className={`split-type-btn ${splitType === opt.value ? 'active' : ''}`}
+                  onClick={() => setSplitType(opt.value)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {splitType === 'equal' && members.length > 0 && (
+            <p className="split-hint">Split evenly among all {members.length} members.</p>
+          )}
+
+          {splitType === 'exact' && nonPayers.length > 0 && (
+            <div className="form-group">
+              <label>Each member owes</label>
+              {nonPayers.map(m => (
+                <div key={m.user_id} className="split-row">
+                  <span className="split-name">{m.display_name}</span>
+                  <div className="split-input-wrap">
+                    <span className="split-prefix">$</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={memberSplits[m.user_id]?.amount || ''}
+                      onChange={e => updateSplit(m.user_id, 'amount', e.target.value)}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {splitType === 'percentage' && nonPayers.length > 0 && (
+            <div className="form-group">
+              <label>Each member's share</label>
+              {nonPayers.map(m => (
+                <div key={m.user_id} className="split-row">
+                  <span className="split-name">{m.display_name}</span>
+                  <div className="split-input-wrap">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      placeholder="0"
+                      value={memberSplits[m.user_id]?.percentage || ''}
+                      onChange={e => updateSplit(m.user_id, 'percentage', e.target.value)}
+                    />
+                    <span className="split-suffix">%</span>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
