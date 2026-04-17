@@ -4,10 +4,15 @@
 
 .transaction-item {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
   padding: 12px 0;
   border-bottom: 1px solid var(--border);
+}
+
+.transaction-main-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .transaction-item:last-child { border-bottom: none; }
@@ -16,6 +21,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
+  flex: 1;
 }
 
 .transaction-category-dot {
@@ -51,6 +58,8 @@
 .transaction-amount {
   font-size: 15px;
   font-weight: 600;
+  flex-shrink: 0;
+  margin-left: 12px;
 }
 
 .transaction-amount.negative { color: var(--expense); }
@@ -60,7 +69,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .expense-comment-panel {

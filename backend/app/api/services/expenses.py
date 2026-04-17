@@ -190,9 +190,9 @@ def _build_splits(
     splits = []
 
     if split_type == SplitType.equal:
-        num_debtors = len(members) - 1
-        share = (base / num_debtors).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
-        remainder = base - (share * num_debtors)
+        num_members = len(members)
+        share = (base / num_members).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+        remainder = base - (share * num_members)
         for member in members:
             if member.user_id == payer_id:
                 member_share = Decimal("0.00")

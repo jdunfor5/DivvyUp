@@ -45,11 +45,16 @@ export default function Login({ onLogin }) {
 
   return (
     <div style={s.page}>
+      <div style={s.blob1} />
+      <div style={s.blob2} />
+      <div style={s.blob3} />
+      <div style={s.blob4} />
+      <div style={s.blob5} />
       <div style={s.card}>
 
         {/* Logo */}
         <div style={s.logoRow}>
-          <span style={s.logoIcon}>💰</span>
+          <span style={s.logoIcon}>D</span>
           <span style={s.logoText}>DivvyUp</span>
         </div>
 
@@ -148,17 +153,45 @@ const s = {
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: '100vh',
-    background: '#f7ebe9',
+    background: '#66232E',
+    position: 'relative',
+    overflow: 'hidden',
     fontFamily: "'Plus Jakarta Sans', sans-serif",
+  },
+  blob1: {
+    position: 'absolute', borderRadius: '50%', pointerEvents: 'none',
+    width: 420, height: 420, top: -130, left: -130,
+    background: 'rgba(255,255,255,0.05)',
+  },
+  blob2: {
+    position: 'absolute', borderRadius: '50%', pointerEvents: 'none',
+    width: 260, height: 260, top: -50, right: -80,
+    background: 'rgba(154,79,89,0.30)',
+  },
+  blob3: {
+    position: 'absolute', borderRadius: '50%', pointerEvents: 'none',
+    width: 200, height: 200, top: '42%', right: '4%',
+    background: 'rgba(255,255,255,0.06)',
+  },
+  blob4: {
+    position: 'absolute', borderRadius: '50%', pointerEvents: 'none',
+    width: 300, height: 300, bottom: -100, left: -60,
+    background: 'rgba(154,79,89,0.22)',
+  },
+  blob5: {
+    position: 'absolute', borderRadius: '50%', pointerEvents: 'none',
+    width: 340, height: 340, bottom: -140, right: -110,
+    background: 'rgba(255,255,255,0.04)',
   },
   card: {
     background: '#ffffff',
     borderRadius: '14px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)',
+    boxShadow: '0 8px 40px rgba(0,0,0,0.25)',
     padding: '2.25rem 2rem',
     width: '100%',
     maxWidth: '380px',
-    border: '1px solid rgba(0,0,0,0.04)',
+    position: 'relative',
+    zIndex: 1,
   },
   logoRow: {
     display: 'flex',
@@ -169,13 +202,15 @@ const s = {
   },
   logoIcon: {
     fontSize: '20px',
-    background: '#f2e5e7',
+    background: '#9A4F59',
+    color: '#fff',
     width: '36px',
     height: '36px',
     borderRadius: '10px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    fontWeight: '700',
   },
   logoText: {
     fontSize: '20px',
