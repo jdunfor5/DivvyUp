@@ -16,12 +16,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #FEE2E2;
 }
 
-.summary-card--income .summary-card-icon { background: #dcfce7; }
-.summary-card--expense .summary-card-icon { background: #fee2e2; }
-.summary-card--owed .summary-card-icon { background: #fef3c7; }
+.summary-card--balance .summary-card-icon { background: #be6b76; }
+.summary-card--expense .summary-card-icon { background: #FFC6CA;; }
+.summary-card--owed .summary-card-icon { background: #be6b76;; }
+.summary-card--upcoming .summary-card-icon { background: #FFC6CA;; }
 
 .summary-card-title {
   font-size: 12px;

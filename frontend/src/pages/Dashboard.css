@@ -23,6 +23,11 @@
   margin-top: 2px;
 }
 
+.dashboard-welcome {
+  color: #fff;
+  font-size: x-large;
+}
+
 .header-actions {
   display: flex;
   gap: 10px;

@@ -2,11 +2,10 @@ import './SummaryCard.css'
 
 function SummaryCard({ title, amount, type }) {
   const icons = {
-    balance: '💼',
-    income: '📈',
+    balance: '⚖️',
     expense: '📉',
     owed: '🤝',
-    upcoming: '🔄',
+    upcoming: '🗓️',
   }
 
   const formatted = new Intl.NumberFormat('en-US', {
