@@ -16,7 +16,7 @@ const SPLIT_TYPES = [
   { value: 'percentage', label: 'By percentage' },
 ]
 
-function RecurringExpenseForm({ members = [], currentUserId, categories = [], onSubmit, onClose, initialValues = null }) {
+function RecurringExpenseForm({ members = [], currentUserId, categories = [], onSubmit, onClose, initialValues = null, initialSplits = null }) {
   const isEdit = initialValues !== null
   const [description, setDescription] = useState(initialValues?.description ?? '')
   const [amount, setAmount] = useState(initialValues?.amount ?? '')
@@ -25,7 +25,13 @@ function RecurringExpenseForm({ members = [], currentUserId, categories = [], on
   const [startDate, setStartDate] = useState(initialValues?.start_date ?? new Date().toISOString().split('T')[0])
   const [endDate, setEndDate] = useState(initialValues?.end_date ?? '')
   const [splitType, setSplitType] = useState(initialValues?.split_type ?? 'equal')
-  const [memberSplits, setMemberSplits] = useState({})
+  const [memberSplits, setMemberSplits] = useState(() => {
+    if (!initialSplits?.length) return {}
+    return Object.fromEntries(initialSplits.map(s => [
+      s.user_id,
+      { amount: s.share_amount ?? '', percentage: s.share_percentage ?? '' },
+    ]))
+  })
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   const [hoveredCat, setHoveredCat] = useState(null)

@@ -95,6 +95,16 @@ class RecurringExpenseUpdate(BaseModel):
     member_splits: Optional[list[MemberSplit]] = None
 
 
+class RecurringExpenseSplitRead(BaseModel):
+    id: uuid.UUID
+    recurring_expense_id: uuid.UUID
+    user_id: uuid.UUID
+    share_amount: Optional[Decimal]
+    share_percentage: Optional[Decimal]
+
+    class Config:
+        from_attributes = True
+
 class RecurringExpenseRead(BaseModel):
     id: uuid.UUID
     group_id: uuid.UUID

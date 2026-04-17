@@ -78,6 +78,18 @@ async def read_all(db: AsyncSession, current_user: UserRead, group_uuid: UUID):
     return recurring_expenses
 
 
+async def read_splits(db: AsyncSession, current_user: UserRead, group_uuid: UUID, recurring_uuid: UUID):
+    try:
+        member_result = await db.execute(select(GroupMember).where(GroupMember.group_id == group_uuid, GroupMember.user_id == current_user.id))
+        if not member_result.scalar_one_or_none():
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You are not a member of this group.")
+        result = await db.execute(select(RecurringExpenseSplit).where(RecurringExpenseSplit.recurring_expense_id == recurring_uuid))
+        return result.scalars().all()
+    except SQLAlchemyError as e:
+        logger.warning("Database error reading splits for recurring expense %s: %s", recurring_uuid, e)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="An error occurred")
+
+
 async def read(db: AsyncSession, current_user: UserRead, group_uuid: UUID, recurring_uuid: UUID):
     try:
         statement = select(RecurringExpense).where(RecurringExpense.id == recurring_uuid, RecurringExpense.group_id == group_uuid)

@@ -6,7 +6,7 @@ from ...dependencies.database import get_session
 from ...dependencies.security import get_current_user
 from ...dependencies.config import settings
 from ...models.user import UserRead
-from ...models.recurring import RecurringExpenseCreate, RecurringExpenseRead, RecurringExpenseUpdate
+from ...models.recurring import RecurringExpenseCreate, RecurringExpenseRead, RecurringExpenseUpdate, RecurringExpenseSplitRead
 from ..services import recurring as service
 
 router = APIRouter(
@@ -30,6 +30,11 @@ async def read_all(group_uuid: UUID, current_user: UserRead = Depends(get_curren
 @router.get("/{recurring_uuid}", response_model=RecurringExpenseRead)
 async def read(group_uuid: UUID, recurring_uuid: UUID, current_user: UserRead = Depends(get_current_user), db: AsyncSession = Depends(get_session)):
     return await service.read(db, current_user, group_uuid, recurring_uuid)
+
+
+@router.get("/{recurring_uuid}/splits", response_model=list[RecurringExpenseSplitRead])
+async def read_splits(group_uuid: UUID, recurring_uuid: UUID, current_user: UserRead = Depends(get_current_user), db: AsyncSession = Depends(get_session)):
+    return await service.read_splits(db, current_user, group_uuid, recurring_uuid)
 
 @router.patch("/{recurring_uuid}", response_model=RecurringExpenseRead)
 async def update(group_uuid: UUID, recurring_uuid: UUID, request: RecurringExpenseUpdate, current_user: UserRead = Depends(get_current_user), db: AsyncSession = Depends(get_session)):

@@ -8,7 +8,7 @@ import SettlementForm from '../components/SettlementForm'
 import RecurringExpenses from '../components/RecurringExpenses'
 import RecurringExpenseForm from '../components/RecurringExpenseForm'
 import BudgetCategories from '../components/BudgetCategories'
-import { getExpenses, getGroupBalances, getGroupMembers, createExpense, updateExpense, deleteExpense, getCurrentUser, getSettlements, createSettlement, confirmSettlement, cancelSettlement, removeMember, transferAdmin, leaveGroup, getCategories, getRecurringExpenses, createRecurringExpense, updateRecurringExpense, deactivateRecurringExpense } from '../api'
+import { getExpenses, getGroupBalances, getGroupMembers, createExpense, updateExpense, deleteExpense, getCurrentUser, getSettlements, createSettlement, confirmSettlement, cancelSettlement, removeMember, transferAdmin, leaveGroup, getCategories, getRecurringExpenses, createRecurringExpense, updateRecurringExpense, deactivateRecurringExpense, getExpenseSplits, getRecurringSplits } from '../api'
 import './Dashboard.css'
 
 function Dashboard({ groups = [], selectedGroupId, onSelectGroup, onRefreshGroups }) {
@@ -22,8 +22,10 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup, onRefreshGroup
   const [error, setError] = useState(null)
   const [showExpenseForm, setShowExpenseForm] = useState(false)
   const [editingExpense, setEditingExpense] = useState(null)
+  const [editingExpenseSplits, setEditingExpenseSplits] = useState(null)
   const [showRecurringForm, setShowRecurringForm] = useState(false)
   const [editingRecurring, setEditingRecurring] = useState(null)
+  const [editingRecurringSplits, setEditingRecurringSplits] = useState(null)
   const [recurringExpenses, setRecurringExpenses] = useState([])
   const [settlementTarget, setSettlementTarget] = useState(null)
 
@@ -79,9 +81,16 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup, onRefreshGroup
     setShowExpenseForm(true)
   }
 
-  function handleEditExpense(expenseId) {
+  async function handleEditExpense(expenseId) {
     const raw = expenses.find(e => e.id === expenseId)
-    if (raw) setEditingExpense(raw)
+    if (!raw) return
+    setEditingExpense(raw)
+    try {
+      const splits = await getExpenseSplits(selectedGroup.id, expenseId)
+      setEditingExpenseSplits(splits)
+    } catch {
+      setEditingExpenseSplits([])
+    }
   }
 
   async function handleExpenseSubmit(body) {
@@ -92,6 +101,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup, onRefreshGroup
   async function handleEditExpenseSubmit(body) {
     await updateExpense(selectedGroup.id, editingExpense.id, body)
     setEditingExpense(null)
+    setEditingExpenseSplits(null)
     loadGroupData(selectedGroup.id)
   }
 
@@ -110,9 +120,20 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup, onRefreshGroup
     loadGroupData(selectedGroup.id)
   }
 
+  async function handleEditRecurring(recurring) {
+    setEditingRecurring(recurring)
+    try {
+      const splits = await getRecurringSplits(selectedGroup.id, recurring.id)
+      setEditingRecurringSplits(splits)
+    } catch {
+      setEditingRecurringSplits([])
+    }
+  }
+
   async function handleEditRecurringSubmit(body) {
     await updateRecurringExpense(selectedGroup.id, editingRecurring.id, body)
     setEditingRecurring(null)
+    setEditingRecurringSplits(null)
     loadGroupData(selectedGroup.id)
   }
 
@@ -355,7 +376,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup, onRefreshGroup
             members={members}
             currentUserId={currentUser?.id}
             onDeactivate={handleDeactivateRecurring}
-            onEdit={setEditingRecurring}
+            onEdit={handleEditRecurring}
           />
         </div>
         <div className="grid-recurring">
@@ -394,8 +415,9 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup, onRefreshGroup
           currentUserId={currentUser?.id}
           categories={categories}
           initialValues={editingExpense}
+          initialSplits={editingExpenseSplits}
           onSubmit={handleEditExpenseSubmit}
-          onClose={() => setEditingExpense(null)}
+          onClose={() => { setEditingExpense(null); setEditingExpenseSplits(null) }}
         />
       )}
 
@@ -415,8 +437,9 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup, onRefreshGroup
           currentUserId={currentUser?.id}
           categories={categories}
           initialValues={editingRecurring}
+          initialSplits={editingRecurringSplits}
           onSubmit={handleEditRecurringSubmit}
-          onClose={() => setEditingRecurring(null)}
+          onClose={() => { setEditingRecurring(null); setEditingRecurringSplits(null) }}
         />
       )}
 

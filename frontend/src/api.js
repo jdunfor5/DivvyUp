@@ -153,6 +153,10 @@ export async function deleteExpense(groupId, expenseId) {
   return api(`/groups/${groupId}/expenses/${expenseId}`, { method: 'DELETE' })
 }
 
+export async function getExpenseSplits(groupId, expenseId) {
+  return api(`/groups/${groupId}/expenses/${expenseId}/splits`)
+}
+
 // ── Settlements ──────────────────────────────────────────────
 
 export async function getSettlements(groupId) {
@@ -230,6 +234,10 @@ export async function createRecurringExpense(groupId, data) {
 
 export async function updateRecurringExpense(groupId, recurringId, data) {
   return api(`/groups/${groupId}/recurring/${recurringId}`, { method: 'PATCH', body: JSON.stringify(data) })
+}
+
+export async function getRecurringSplits(groupId, recurringId) {
+  return api(`/groups/${groupId}/recurring/${recurringId}/splits`)
 }
 
 export async function deactivateRecurringExpense(groupId, recurringId) {

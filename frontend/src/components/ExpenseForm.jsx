@@ -8,7 +8,7 @@ const SPLIT_TYPES = [
   { value: 'percentage', label: 'By percentage' },
 ]
 
-function ExpenseForm({ members, currentUserId, categories = [], onSubmit, onClose, initialValues = null }) {
+function ExpenseForm({ members, currentUserId, categories = [], onSubmit, onClose, initialValues = null, initialSplits = null }) {
   const isEdit = initialValues !== null
   const [description, setDescription] = useState(initialValues?.description ?? '')
   const [amount, setAmount] = useState(initialValues?.amount ?? '')
@@ -18,7 +18,13 @@ function ExpenseForm({ members, currentUserId, categories = [], onSubmit, onClos
       : new Date().toISOString().split('T')[0]
   )
   const [splitType, setSplitType] = useState(initialValues?.split_type ?? 'equal')
-  const [memberSplits, setMemberSplits] = useState({})
+  const [memberSplits, setMemberSplits] = useState(() => {
+    if (!initialSplits?.length) return {}
+    return Object.fromEntries(initialSplits.map(s => [
+      s.user_id,
+      { amount: s.share_amount ?? '', percentage: s.share_percentage ?? '' },
+    ]))
+  })
   const [categoryId, setCategoryId] = useState(initialValues?.category_id ?? 1)
   const [error, setError] = useState(null)
   const [submitting, setSubmitting] = useState(false)
