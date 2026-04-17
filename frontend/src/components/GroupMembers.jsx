@@ -54,13 +54,9 @@ function GroupMembers({ members, currentUser, isAdmin, onSettlePayment, onRemove
               {managing && m.isYou && (
                 <button className="btn-danger-sm" onClick={onLeaveGroup}>Leave</button>
               )}
-              {!managing && !m.isYou && (
-                <button
-                  className="btn-settle"
-                  onClick={() => onSettlePayment(m)}
-                  disabled={!m.canSettle}
-                >
-                  {m.canSettle ? 'Pay back' : 'Await payment'}
+              {!managing && !m.isYou && m.canSettle && (
+                <button className="btn-settle" onClick={() => onSettlePayment(m)}>
+                  Pay back
                 </button>
               )}
             </div>

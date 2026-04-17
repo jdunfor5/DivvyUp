@@ -239,6 +239,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
       date: new Date(exp.expense_date).toISOString().split('T')[0],
       category: categories.find(c => c.id === exp.category_id)?.name || 'Misc',
       paidByName: exp.paid_by_name || null,
+      splitType: exp.split_type || null,
     }))
     .sort((a, b) => new Date(b.date) - new Date(a.date))
 

@@ -103,8 +103,8 @@
 .btn-danger-sm:hover { background: #f5c6c6; }
 
 .btn-secondary-sm {
-  background: var(--border);
-  color: var(--text-secondary);
+  background: var(--accent-xlight);
+  color: var(--accent);
   border: none;
   border-radius: 6px;
   padding: 6px 10px;
@@ -114,4 +114,4 @@
   font-family: inherit;
 }
 
-.btn-secondary-sm:hover { background: #dde0fb; color: var(--accent); }
+.btn-secondary-sm:hover { background: var(--accent-light); }

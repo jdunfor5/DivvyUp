@@ -1025,13 +1025,15 @@ body {
 
 .btn-delete {
   background: none;
-  border: none;
+  border: 1px solid #6b7280;
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: #4b5563;
+  font-size: 13px;
   cursor: pointer;
-  font-size: 12px;
-  padding: 2px;
-  border-radius: 3px;
-  color: var(--text-primary);
-  transition: background 0.15s;
+  line-height: 1;
+  transition: all 0.15s;
+  font-family: inherit;
 }
 
 .btn-delete:hover {

@@ -1,17 +1,5 @@
 import './BudgetCategories.css'
-
-const CATEGORY_COLORS = {
-  'Groceries':     '#22c55e',
-  'Food & Drink':  '#fb923c',
-  'Transport':     '#60a5fa',
-  'Housing':       '#a78bfa',
-  'Entertainment': '#f472b6',
-  'Shopping':      '#facc15',
-  'Travel':        '#34d399',
-  'Utilities':     '#94a3b8',
-  'Health':        '#b45309',
-  'Other':         '#cbd5e1',
-}
+import { CATEGORY_COLORS } from '../constants/categories'
 
 const FALLBACK_COLORS = ['#60a5fa','#4ade80','#fb923c','#a78bfa','#f472b6','#facc15','#34d399','#94a3b8']
 

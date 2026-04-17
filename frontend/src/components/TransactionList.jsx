@@ -2,11 +2,22 @@ import { useEffect, useState } from 'react'
 import { getExpenseComments, createExpenseComment } from '../api'
 import './TransactionList.css'
 
+const PAGE_SIZE = 5
+
+const SPLIT_LABELS = {
+  equal: 'Equal split',
+  exact: 'Exact split',
+  percentage: '% split',
+}
+
 function TransactionList({ transactions, groupId, currentUserId, groupMembers, onEdit, onDelete }) {
   const [commentsByExpense, setCommentsByExpense] = useState({})
   const [drafts, setDrafts] = useState({})
   const [openExpenseId, setOpenExpenseId] = useState(null)
   const [loadingComment, setLoadingComment] = useState(false)
+  const [showAll, setShowAll] = useState(false)
+
+  const visible = showAll ? transactions : transactions.slice(0, PAGE_SIZE)
 
   const memberNames = groupMembers?.reduce((map, member) => {
     map[member.user_id] = member.display_name || member.email || 'Member'
@@ -59,24 +70,28 @@ function TransactionList({ transactions, groupId, currentUserId, groupMembers, o
     <div className="transaction-list card">
       <div className="card-header">
         <h2>Recent Expenses</h2>
-        <button className="btn-link">View all</button>
+        {transactions.length > PAGE_SIZE && (
+          <button className="btn-link" onClick={() => setShowAll(v => !v)}>
+            {showAll ? 'Show less' : `View all (${transactions.length})`}
+          </button>
+        )}
       </div>
       <ul>
-        {transactions.map((tx) => (
+        {visible.map((tx) => (
           <li key={tx.id} className="transaction-item">
             <div className="transaction-left">
               <div className="transaction-category-dot" data-category={tx.category} />
               <div>
                 <p className="transaction-desc">{tx.description}</p>
                 <p className="transaction-date">
-                  {tx.date} · {tx.category}{tx.paidByName ? ` · Paid by ${tx.paidByName}` : ''}
+                  {tx.date} · {tx.category}{tx.paidByName ? ` · Paid by ${tx.paidByName}` : ''}{tx.splitType ? ` · ${SPLIT_LABELS[tx.splitType] || tx.splitType}` : ''}
                 </p>
                 <div className="transaction-actions">
                   <button
                     className="btn-comment-toggle"
                     onClick={() => setOpenExpenseId(openExpenseId === tx.id ? null : tx.id)}
                   >
-                    💬 {((commentsByExpense[tx.id] || []).length)}
+                    🗨 {((commentsByExpense[tx.id] || []).length)}
                   </button>
                   {onEdit && (
                     <button
