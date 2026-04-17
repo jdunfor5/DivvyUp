@@ -1,5 +1,37 @@
 .budget-categories ul { list-style: none; }
 
+.budget-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.budget-tab {
+  flex: 1;
+  padding: 5px 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: none;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.budget-tab:hover {
+  background: var(--accent-xlight);
+  border-color: var(--accent-light);
+  color: var(--accent);
+}
+
+.budget-tab.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 .budget-item { margin-bottom: 14px; }
 .budget-item:last-child { margin-bottom: 0; }
 

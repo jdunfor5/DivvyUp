@@ -42,10 +42,60 @@
   margin: 0;
 }
 
-.member-settlements {
+.member-settlement-tip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.settlement-tip-icon {
+  font-size: 15px;
+  color: var(--text-secondary);
+  border: 1.5px solid var(--text-secondary);
+  border-radius: 50%;
+  width: 15px;
+  height: 15px;
   display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  line-height: 1;
+}
+
+.settlement-tip-icon:hover{
+  border: 1.5px solid #9A4F59;
+  color: #9A4F59;
+}
+
+.settlement-tip-body {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  background: #1f2937;
+  color: #fff;
+  font-size: 12px;
+  border-radius: 7px;
+  padding: 7px 10px;
+  white-space: nowrap;
   flex-direction: column;
-  gap: 1px;
+  gap: 3px;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.settlement-tip-body::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 10px;
+  border: 5px solid transparent;
+  border-top-color: #1f2937;
+}
+
+.member-settlement-tip:hover .settlement-tip-body {
+  display: flex;
 }
 
 .member-balance.owes-you { color: var(--income); }

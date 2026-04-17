@@ -97,6 +97,7 @@ class ExpenseRead(BaseModel):
     expense_date: date
     notes: Optional[str]
     is_deleted: bool
+    recurring_expense_id: Optional[uuid.UUID] = None
     created_at: datetime
 
     class Config:

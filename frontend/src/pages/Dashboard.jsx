@@ -196,16 +196,22 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
     }
   }
 
-  const categorySpending = useMemo(() => {
+  function buildCategorySpending(expenseList) {
     const map = {}
-    for (const exp of expenses) {
+    for (const exp of expenseList) {
       const cat = categories.find(c => c.id === exp.category_id)
       const key = cat?.name || 'Misc'
       if (!map[key]) map[key] = { category: key, icon: cat?.icon || '', spent: 0 }
       map[key].spent += Number(exp.amount)
     }
     return Object.values(map).sort((a, b) => b.spent - a.spent)
-  }, [expenses, categories])
+  }
+
+  const categorySpending = useMemo(() => ({
+    all:       buildCategorySpending(expenses),
+    oneTime:   buildCategorySpending(expenses.filter(e => !e.recurring_expense_id)),
+    recurring: buildCategorySpending(expenses.filter(e => !!e.recurring_expense_id)),
+  }), [expenses, categories])
 
   const currentMonthName = new Date().toLocaleString('default', { month: 'long', year: 'numeric' })
 
@@ -239,11 +245,16 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
       description: exp.description,
       amount: Number(exp.amount) * -1,
       date: new Date(exp.expense_date).toISOString().split('T')[0],
+      createdAt: exp.created_at,
       category: categories.find(c => c.id === exp.category_id)?.name || 'Misc',
       paidByName: exp.paid_by_name || null,
       splitType: exp.split_type || null,
     }))
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .sort((a, b) => {
+      const dateDiff = new Date(b.date) - new Date(a.date)
+      if (dateDiff !== 0) return dateDiff
+      return new Date(b.createdAt) - new Date(a.createdAt)
+    })
 
   const transformedMembers = members.map(mem => {
     const balance = balances.find(b => b.user_id === mem.user_id)?.net_balance || 0
@@ -336,10 +347,12 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
           />
         </div>
         <div className="grid-right">
-          <BudgetCategories budgets={categorySpending} />
+          <BudgetCategories budgets={categorySpending.all} oneTimeBudgets={categorySpending.oneTime} recurringBudgets={categorySpending.recurring} />
           <RecurringExpenses
             recurringExpenses={recurringExpenses}
             categories={categories}
+            members={members}
+            currentUserId={currentUser?.id}
             onDeactivate={handleDeactivateRecurring}
             onEdit={setEditingRecurring}
           />
