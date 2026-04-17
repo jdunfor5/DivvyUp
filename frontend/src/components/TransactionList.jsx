@@ -4,6 +4,12 @@ import './TransactionList.css'
 
 const PAGE_SIZE = 5
 
+const SPLIT_LABELS = {
+  equal: 'Equal split',
+  exact: 'Exact split',
+  percentage: '% split',
+}
+
 function TransactionList({ transactions, groupId, currentUserId, groupMembers, onEdit, onDelete }) {
   const [commentsByExpense, setCommentsByExpense] = useState({})
   const [drafts, setDrafts] = useState({})
@@ -78,7 +84,7 @@ function TransactionList({ transactions, groupId, currentUserId, groupMembers, o
               <div>
                 <p className="transaction-desc">{tx.description}</p>
                 <p className="transaction-date">
-                  {tx.date} · {tx.category}{tx.paidByName ? ` · Paid by ${tx.paidByName}` : ''}
+                  {tx.date} · {tx.category}{tx.paidByName ? ` · Paid by ${tx.paidByName}` : ''}{tx.splitType ? ` · ${SPLIT_LABELS[tx.splitType] || tx.splitType}` : ''}
                 </p>
                 <div className="transaction-actions">
                   <button
