@@ -1,4 +1,5 @@
 import './RecurringExpenses.css'
+import { CATEGORY_COLORS } from '../constants/categories'
 
 const INTERVAL_LABELS = {
   daily: 'Daily',
@@ -23,8 +24,9 @@ function RecurringExpenses({ recurringExpenses, categories = [], onDeactivate, o
         <ul className="recurring-list">
           {active.map(r => {
             const categoryName = categories.find(c => c.id === r.category_id)?.name || 'Misc'
+            const color = CATEGORY_COLORS[categoryName] || '#cbd5e1'
             return (
-              <li key={r.id} className="recurring-item">
+              <li key={r.id} className="recurring-item" style={{ borderLeft: `5px solid ${color}` }}>
                 <div className="recurring-info">
                   <p className="recurring-description">{r.description}</p>
                   <p className="recurring-meta">
