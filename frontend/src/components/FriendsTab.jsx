@@ -248,6 +248,10 @@ function FriendsTab({ currentUser, groups = [] }) {
                             ? <span>Shared groups: {friend.shared_group_ids.map(id => groups.find(g => g.id === id)?.name).filter(Boolean).join(', ')}</span>
                             : <span>No shared groups</span>
                           }
+                          <span style={{ display: 'flex', gap: '12px' }}>
+                            <span>You have sent: {formatCurrency(friend.total_sent)}</span>
+                            <span>They have sent: {formatCurrency(friend.total_received)}</span>
+                          </span>
                         </div>
                       </div>
                     </div>

@@ -54,6 +54,8 @@ async def list_friends(db: AsyncSession, current_user: UserRead):
             shared_group_ids = [str(row[0]) for row in friend_groups.all() if row[0] in my_group_ids]
 
             balance = await _calculate_balance(db, current_user.id, user.id)
+            total_sent = await _calculate_total_sent(db, current_user.id, user.id)
+            total_received = await _calculate_total_sent(db, user.id, current_user.id)
             friends.append({
                 "id":               user.id,
                 "email":            user.email,
@@ -61,6 +63,8 @@ async def list_friends(db: AsyncSession, current_user: UserRead):
                 "avatar_emoji":     user.avatar_emoji,
                 "added_at":         added_at,
                 "balance":          balance,
+                "total_sent":       total_sent,
+                "total_received":   total_received,
                 "shared_group_ids": shared_group_ids,
             })
     except SQLAlchemyError as e:
@@ -161,7 +165,7 @@ async def _calculate_balance(db: AsyncSession, user_id: UUID, friend_id: UUID) -
         )
     )
     for (amount,) in sent.all():
-        balance -= amount
+        balance += amount  # user paid friend → reduces user's debt → balance increases
 
     received = await db.execute(
         select(Settlement.amount).where(
@@ -171,6 +175,17 @@ async def _calculate_balance(db: AsyncSession, user_id: UUID, friend_id: UUID) -
         )
     )
     for (amount,) in received.all():
-        balance += amount
+        balance -= amount  # friend paid user → reduces friend's debt → balance decreases
 
     return balance.quantize(Decimal("0.01"))
+
+
+async def _calculate_total_sent(db: AsyncSession, user_id: UUID, friend_id: UUID) -> Decimal:
+    result = await db.execute(
+        select(Settlement.amount).where(
+            Settlement.payer_id == user_id,
+            Settlement.payee_id == friend_id,
+            Settlement.status == PaymentStatus.completed,
+        )
+    )
+    return sum((amount for (amount,) in result.all()), Decimal("0")).quantize(Decimal("0.01"))

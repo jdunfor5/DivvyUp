@@ -218,7 +218,9 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
             <p className="dashboard-date"><span id="display-month">{currentMonthName}</span></p>
           </div>
         </div>
-        <div>Please create a group first from the sidebar.</div>
+        <div className="dashboard-welcome">Welcome to DivvyUp!</div>
+        <br></br>
+        <div className="dashboard-welcome">Create a group in the sidebar to the left to get started 😄</div>
       </div>
     )
   }
@@ -251,6 +253,11 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
     const paymentsFromYou = settlements
       .filter(s => s.payer_id === currentUser?.id && s.payee_id === mem.user_id && s.status === 'completed')
       .reduce((sum, s) => sum + Number(s.amount), 0)
+    const pendingFromYou = settlements
+      .filter(s => s.payer_id === currentUser?.id && s.payee_id === mem.user_id && s.status === 'pending')
+      .reduce((sum, s) => sum + Number(s.amount), 0)
+
+    const effectiveBalance = Number(balance) - pendingFromYou
 
     const isYou = mem.user_id === currentUser?.id
     const isAdmin = mem.role === 'admin'
@@ -262,10 +269,10 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
       name: displayName,
       initials: initialsSource.split(' ').map(n => n[0]).join('').toUpperCase(),
       avatar: mem.avatar_emoji,
-      owes: Number(balance),
+      owes: effectiveBalance,
       paymentsToYou,
       paymentsFromYou,
-      canSettle: Number(balance) > 0,
+      canSettle: effectiveBalance > 0,
       isYou,
       isAdmin,
     }

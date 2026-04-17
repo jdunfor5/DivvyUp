@@ -28,4 +28,6 @@ class FriendRead(BaseModel):
     avatar_emoji:     str
     added_at:         datetime
     balance:          Decimal  # positive = they owe you, negative = you owe them
+    total_sent:       Decimal = Decimal("0")
+    total_received:   Decimal = Decimal("0")
     shared_group_ids: list[str] = []

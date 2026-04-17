@@ -24,26 +24,38 @@ function TransactionList({ transactions, groupId, currentUserId, groupMembers, o
     return map
   }, {}) || {}
 
-  useEffect(() => {
-    if (!groupId || transactions.length === 0) return
+  const visibleIds = visible.map(tx => tx.id).join(',')
 
+  useEffect(() => {
+    if (!groupId || !visibleIds) return
     let cancelled = false
-    const loadAllComments = async () => {
+    const load = async () => {
+      const toFetch = visible.filter(tx => commentsByExpense[tx.id] === undefined)
+      if (!toFetch.length) return
       const newComments = {}
-      await Promise.all(transactions.map(async (tx) => {
+      await Promise.all(toFetch.map(async (tx) => {
         try {
           const comments = await getExpenseComments(groupId, tx.id)
           if (!cancelled) newComments[tx.id] = comments
-        } catch (err) {
+        } catch {
           if (!cancelled) newComments[tx.id] = []
         }
       }))
-      if (!cancelled) setCommentsByExpense(newComments)
+      if (!cancelled) setCommentsByExpense(current => ({ ...current, ...newComments }))
     }
-
-    loadAllComments()
+    load()
     return () => { cancelled = true }
-  }, [groupId, transactions])
+  }, [groupId, visibleIds])
+
+  async function loadComments(expenseId) {
+    if (commentsByExpense[expenseId] !== undefined) return
+    try {
+      const comments = await getExpenseComments(groupId, expenseId)
+      setCommentsByExpense(current => ({ ...current, [expenseId]: comments }))
+    } catch {
+      setCommentsByExpense(current => ({ ...current, [expenseId]: [] }))
+    }
+  }
 
   const handleDraftChange = (expenseId, value) => {
     setDrafts(current => ({ ...current, [expenseId]: value }))
@@ -88,8 +100,12 @@ function TransactionList({ transactions, groupId, currentUserId, groupMembers, o
                 </p>
                 <div className="transaction-actions">
                   <button
-                    className="btn-comment-toggle"
-                    onClick={() => setOpenExpenseId(openExpenseId === tx.id ? null : tx.id)}
+                    className={`btn-comment-toggle${openExpenseId === tx.id ? ' open' : ''}`}
+                    onClick={() => {
+                      const next = openExpenseId === tx.id ? null : tx.id
+                      setOpenExpenseId(next)
+                      if (next) loadComments(next)
+                    }}
                   >
                     🗨 {((commentsByExpense[tx.id] || []).length)}
                   </button>

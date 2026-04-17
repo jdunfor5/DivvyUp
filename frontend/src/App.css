@@ -19,6 +19,7 @@
   --expense: #ef4444;
   --owed: #f59e0b;
   --text-primary: #111827;
+  --text-welcome: #ffffff;
   --text-secondary: #6b7280;
   --border: #e5e7eb;
   --radius: 14px;
@@ -96,6 +97,10 @@ body {
   margin-bottom: 4px;
 }
 
+.sidebar-dropdown:hover {
+  color: #66232E;
+}
+
 .sidebar-tab-button {
   width: 100%;
   display: flex;
@@ -105,7 +110,7 @@ body {
   margin-top: 8px;
   border: none;
   border-radius: 12px;
-  background: #66232E;
+  background: #9A4F59;
   color: #fff;
   font-family: inherit;
   font-size: 14px;
@@ -121,7 +126,7 @@ body {
 
 .sidebar-tab-button.active {
   background: var(--accent);
-  color: #fff;
+  color: #9A4F59;
 }
 
 .sidebar-tab-button__icon {
@@ -157,7 +162,12 @@ body {
 
 .dropdown-toggle.active:not(.open) {
   color: #FFFFFF;
+  background: #9A4F59;
+}
+
+.dropdown-toggle.active:not(.open):hover {
   background: #66232E;
+  color: #fff;
 }
 
 .dropdown-toggle-left {
@@ -216,7 +226,7 @@ body {
 }
 
 .group-avatar {
-  background: #66232E;
+  background: #9A4F59;
   color: #fff;
   border-radius: 8px;
 }
@@ -308,7 +318,7 @@ body {
 }
 
 .btn-share {
-  background: #66232E;
+  background: #9A4F59;
   border: none;
   cursor: pointer;
   font-size: 11px;
@@ -334,7 +344,7 @@ body {
 .item-count {
   font-size: 11px;
   color: #fff;
-  background: #66232E;
+  background: #9A4F59;
   border-radius: 99px;
   padding: 1px 7px;
   font-weight: 600;
@@ -477,6 +487,11 @@ body {
 
 .btn-add:hover #friend-icon::after {
   content: "🫂";
+}
+
+.btn-add #profile-icon,
+.btn-add #logout-icon {
+  font-size: 18px;
 }
 
 .btn-add #profile-icon::after {
@@ -674,6 +689,8 @@ body {
 
 /* ── Friends tab ── */
 .friends-tab {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -1159,6 +1176,17 @@ body {
     justify-content: center;
     padding: 12px 14px;
     font-size: 14px;
+  }
+
+  .sidebar-bottom {
+    flex-direction: row;
+    gap: 6px;
+  }
+
+  .sidebar-bottom .btn-add {
+    flex: 1;
+    font-size: 12px;
+    padding: 10px 8px;
   }
 
   .create-group-form {
