@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getExpenseComments, createExpenseComment } from '../api'
+import { getExpenseComments, createExpenseComment, deleteExpenseComment } from '../api'
 import './TransactionList.css'
 
 const PAGE_SIZE = 5
@@ -59,6 +59,16 @@ function TransactionList({ transactions, groupId, currentUserId, groupMembers, o
 
   const handleDraftChange = (expenseId, value) => {
     setDrafts(current => ({ ...current, [expenseId]: value }))
+  }
+
+  const handleDeleteComment = async (expenseId, commentId) => {
+    try {
+      await deleteExpenseComment(groupId, expenseId, commentId)
+      const updated = await getExpenseComments(groupId, expenseId)
+      setCommentsByExpense(current => ({ ...current, [expenseId]: updated }))
+    } catch (err) {
+      console.error('Failed to delete comment', err)
+    }
   }
 
   const handleCreateComment = async (expenseId) => {
@@ -145,6 +155,9 @@ function TransactionList({ transactions, groupId, currentUserId, groupMembers, o
                           {comment.user_id === currentUserId ? 'You' : memberNames[comment.user_id] || 'Member'}
                         </span>
                         <span className="comment-date">{new Date(comment.created_at).toLocaleString()}</span>
+                        {comment.user_id === currentUserId && (
+                          <button className="btn-link comment-delete" onClick={() => handleDeleteComment(tx.id, comment.id)}>Delete</button>
+                        )}
                       </div>
                       <p className="comment-body">{comment.body}</p>
                     </div>

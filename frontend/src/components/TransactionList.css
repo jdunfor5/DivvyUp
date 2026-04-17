@@ -107,6 +107,18 @@
   color: var(--text-primary);
 }
 
+.comment-delete {
+  margin-left: auto;
+  color: var(--text-secondary);
+  font-size: 11px;
+  opacity: 0.6;
+}
+
+.comment-delete:hover {
+  color: var(--danger, #e53e3e);
+  opacity: 1;
+}
+
 .comment-body {
   margin: 0;
   font-size: 13px;

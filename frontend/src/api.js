@@ -125,6 +125,10 @@ export async function createExpenseComment(groupId, expenseId, body) {
   })
 }
 
+export async function deleteExpenseComment(groupId, expenseId, commentId) {
+  return api(`/groups/${groupId}/expenses/${expenseId}/comments/${commentId}`, { method: 'DELETE' })
+}
+
 export async function joinGroup(inviteCode) {
   return api('/groups/join', { method: 'POST', body: JSON.stringify({ invite_code: inviteCode }) })
 }
