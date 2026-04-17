@@ -6,6 +6,7 @@ const CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'INR']
 export default function Profile({ currentUser, onUpdate, onClose, onDeleteAccount }) {
   const [displayName, setDisplayName] = useState(currentUser.display_name)
   const [avatarEmoji, setAvatarEmoji] = useState(currentUser.avatar_emoji)
+  const [avatarColor, setAvatarColor] = useState(currentUser.avatar_color || '#f2e5e7')
   const [phone, setPhone] = useState(currentUser.phone || '')
   const [venmoHandle, setVenmoHandle] = useState(currentUser.venmo_handle || '')
   const [paypalEmail, setPaypalEmail] = useState(currentUser.paypal_email || '')
@@ -36,6 +37,7 @@ export default function Profile({ currentUser, onUpdate, onClose, onDeleteAccoun
       const updated = await updateCurrentUser({
         display_name: displayName,
         avatar_emoji: avatarEmoji,
+        avatar_color: avatarColor,
         phone: phone || null,
         venmo_handle: venmoHandle || null,
         paypal_email: paypalEmail || null,
@@ -43,7 +45,7 @@ export default function Profile({ currentUser, onUpdate, onClose, onDeleteAccoun
       })
       onUpdate(updated)
       setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
+      setTimeout(() => onClose(), 800)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -63,15 +65,26 @@ export default function Profile({ currentUser, onUpdate, onClose, onDeleteAccoun
         <form onSubmit={handleSubmit} style={s.form}>
 
           <div style={s.avatarRow}>
-            <div style={s.avatarPreview}>{avatarEmoji}</div>
-            <input
-              type="text"
-              value={avatarEmoji}
-              onChange={e => setAvatarEmoji(e.target.value)}
-              maxLength={2}
-              style={{ ...s.input, width: '70px', textAlign: 'center', fontSize: '20px' }}
-              placeholder="😀"
-            />
+            <div style={{ ...s.avatarPreview, background: avatarColor }}>{avatarEmoji}</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <input
+                type="text"
+                value={avatarEmoji}
+                onChange={e => setAvatarEmoji(e.target.value)}
+                maxLength={2}
+                style={{ ...s.input, width: '70px', textAlign: 'center', fontSize: '20px' }}
+                placeholder="😀"
+              />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="color"
+                  value={avatarColor}
+                  onChange={e => setAvatarColor(e.target.value)}
+                  style={s.colorPicker}
+                />
+                <span style={{ fontSize: '12px', color: '#6b7280' }}>Background color</span>
+              </div>
+            </div>
           </div>
 
           <label style={s.label}>Display Name</label>
@@ -191,11 +204,20 @@ const s = {
     fontSize: '40px',
     width: '56px',
     height: '56px',
-    background: '#f2e5e7',
     borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
+  },
+  colorPicker: {
+    width: '32px',
+    height: '32px',
+    border: '1.5px solid #e5e7eb',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    padding: '2px',
+    background: 'none',
   },
   form: {
     display: 'flex',

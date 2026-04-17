@@ -84,6 +84,7 @@ class GroupMemberRead(BaseModel):
     display_name: Optional[str] = None
     email: Optional[str] = None
     avatar_emoji: Optional[str] = None
+    avatar_color: Optional[str] = None
 
     class Config:
         from_attributes = True

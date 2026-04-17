@@ -17,6 +17,7 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String, nullable=False)
     display_name: Mapped[str] = mapped_column(String(100), nullable=False)
     avatar_emoji: Mapped[str] = mapped_column(String(4), nullable=False, default="💩")
+    avatar_color: Mapped[str] = mapped_column(String(7), nullable=False, default="#f2e5e7")
     phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     venmo_handle: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     paypal_email: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
@@ -43,6 +44,7 @@ class UserRead(BaseModel):
     email: str
     display_name: str
     avatar_emoji: str
+    avatar_color: str
     phone: Optional[str]
     venmo_handle: Optional[str]
     paypal_email: Optional[str]
@@ -57,6 +59,7 @@ class UserUpdate(BaseModel):
     """All fields optional for PATCH requests."""
     display_name: Optional[str] = None
     avatar_emoji: Optional[str] = None
+    avatar_color: Optional[str] = None
     phone: Optional[str] = None
     venmo_handle: Optional[str] = None
     paypal_email: Optional[str] = None
