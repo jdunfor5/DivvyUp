@@ -43,6 +43,16 @@ function App() {
     }
   }, [currentUser])
 
+  useEffect(() => {
+    const handler = () => {
+      setCurrentUser(null)
+      setGroups([])
+      setSelectedGroupId(null)
+    }
+    window.addEventListener('auth:logout', handler)
+    return () => window.removeEventListener('auth:logout', handler)
+  }, [])
+
   async function loadGroups() {
     try {
       const data = await getGroups()

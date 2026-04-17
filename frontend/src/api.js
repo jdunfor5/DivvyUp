@@ -73,6 +73,7 @@ export async function api(path, options = {}) {
     if (!res.ok) {
       if (res.status === 401) {
         clearToken()
+        window.dispatchEvent(new CustomEvent('auth:logout'))
       }
       const err = await res.json().catch(() => ({}))
       const detail = Array.isArray(err.detail)
