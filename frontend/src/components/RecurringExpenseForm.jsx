@@ -68,6 +68,14 @@ function RecurringExpenseForm({ members = [], currentUserId, categories = [], on
       end_date: endDate || null,
     }
 
+    if (splitType === 'percentage' && nonPayers.length > 0) {
+      const total = nonPayers.reduce((sum, m) => sum + parseFloat(memberSplits[m.user_id]?.percentage || 0), 0)
+      if (Math.round(total * 100) !== 10000) {
+        setError(`Percentages must add up to 100% (currently ${total.toFixed(2)}%).`)
+        return
+      }
+    }
+
     if ((splitType === 'exact' || splitType === 'percentage') && nonPayers.length > 0) {
       const field = splitType === 'exact' ? 'amount' : 'percentage'
       body.member_splits = nonPayers.map(m => ({
