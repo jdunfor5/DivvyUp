@@ -36,7 +36,7 @@ function RecurringExpenseForm({ members = [], currentUserId, categories = [], on
   const [submitting, setSubmitting] = useState(false)
   const [hoveredCat, setHoveredCat] = useState(null)
 
-  const nonPayers = members.filter(m => m.user_id !== currentUserId)
+  const nonPayers = members.filter(m => m.user_id !== currentUserId).sort((a, b) => (a.display_name || "").localeCompare(b.display_name || ""))
 
   function updateSplit(userId, field, value) {
     setMemberSplits(prev => ({
