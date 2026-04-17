@@ -31,13 +31,12 @@ function GroupMembers({ members, currentUser, isAdmin, onSettlePayment, onRemove
                     </p>
                   )}
                   {(m.paymentsToYou > 0 || m.paymentsFromYou > 0) && (
-                    <div className="member-settlements">
-                      {m.paymentsToYou > 0 && (
-                        <p className="member-settlement">Paid you: ${m.paymentsToYou.toFixed(2)}</p>
-                      )}
-                      {m.paymentsFromYou > 0 && (
-                        <p className="member-settlement">You paid: ${m.paymentsFromYou.toFixed(2)}</p>
-                      )}
+                    <div className="member-settlement-tip">
+                      <span className="settlement-tip-icon">ℹ</span>
+                      <div className="settlement-tip-body">
+                        {m.paymentsToYou > 0 && <span>Paid you: ${m.paymentsToYou.toFixed(2)}</span>}
+                        {m.paymentsFromYou > 0 && <span>You paid: ${m.paymentsFromYou.toFixed(2)}</span>}
+                      </div>
                     </div>
                   )}
                 </div>

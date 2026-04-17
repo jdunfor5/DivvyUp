@@ -15,8 +15,13 @@ const SPLIT_LABELS = {
   percentage: '% split',
 }
 
-function RecurringExpenses({ recurringExpenses, categories = [], onDeactivate, onEdit }) {
+function RecurringExpenses({ recurringExpenses, categories = [], members = [], currentUserId, onDeactivate, onEdit }) {
   const active = recurringExpenses.filter(r => r.is_active)
+
+  function getPayerName(paidBy) {
+    if (paidBy === currentUserId) return 'You'
+    return members.find(m => m.user_id === paidBy)?.display_name || 'Unknown'
+  }
 
   return (
     <div className="recurring-expenses card">
@@ -36,7 +41,13 @@ function RecurringExpenses({ recurringExpenses, categories = [], onDeactivate, o
                 <div className="recurring-info">
                   <p className="recurring-description">{r.description}</p>
                   <p className="recurring-meta">
-                    <span className="recurring-amount">${Number(r.amount).toFixed(2)}</span> &middot; {INTERVAL_LABELS[r.interval]} &middot; {categoryName} &middot; {SPLIT_LABELS[r.split_type] || 'Equal split'}
+                    <span className="recurring-amount">${Number(r.amount).toFixed(2)}</span>
+                  </p>
+                  <p className="recurring-meta">
+                    {INTERVAL_LABELS[r.interval]} | {categoryName}
+                  </p>
+                  <p className="recurring-meta">
+                    {SPLIT_LABELS[r.split_type] || 'Equal split'} | {getPayerName(r.paid_by)}
                   </p>
                   <p className="recurring-meta">
                     Next: {r.next_due_date}
