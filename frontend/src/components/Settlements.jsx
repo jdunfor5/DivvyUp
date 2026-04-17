@@ -30,10 +30,15 @@ function Settlements({ settlements, currentUserId, members = [], onConfirmSettle
           <ul className="settlements-list">
             {pendingSettlements.map((settlement) => {
               const isFromYou = settlement.payer_id === currentUserId
-              const otherName = isFromYou ? getMemberName(settlement.payee_id) : getMemberName(settlement.payer_id)
+              const isToYou = settlement.payee_id === currentUserId
+              const payerName = getMemberName(settlement.payer_id)
+              const payeeName = getMemberName(settlement.payee_id)
+              const provider = settlement.provider ? ` via ${settlement.provider}` : ''
               const description = isFromYou
-                ? `You sent ${otherName} $${settlement.amount}${settlement.provider ? ` via ${settlement.provider}` : ''}`
-                : `${otherName} sent you $${settlement.amount}${settlement.provider ? ` via ${settlement.provider}` : ''}`
+                ? `You sent ${payeeName} $${settlement.amount}${provider}`
+                : isToYou
+                ? `${payerName} sent you $${settlement.amount}${provider}`
+                : `${payerName} sent ${payeeName} $${settlement.amount}${provider}`
 
               return (
                 <li key={settlement.id} className="settlement-item">
@@ -45,7 +50,7 @@ function Settlements({ settlements, currentUserId, members = [], onConfirmSettle
                       {new Date(settlement.created_at).toLocaleDateString()}
                     </p>
                   </div>
-                  {!isFromYou && (
+                  {isToYou && (
                     <div className="settlement-actions">
                       <button 
                         className="btn-confirm"
@@ -74,10 +79,15 @@ function Settlements({ settlements, currentUserId, members = [], onConfirmSettle
           <ul className="settlements-list">
             {completedSettlements.map((settlement) => {
               const isFromYou = settlement.payer_id === currentUserId
-              const otherName = isFromYou ? getMemberName(settlement.payee_id) : getMemberName(settlement.payer_id)
+              const isToYou = settlement.payee_id === currentUserId
+              const payerName = getMemberName(settlement.payer_id)
+              const payeeName = getMemberName(settlement.payee_id)
+              const provider = settlement.provider ? ` via ${settlement.provider}` : ''
               const description = isFromYou
-                ? `You paid ${otherName} $${settlement.amount}${settlement.provider ? ` via ${settlement.provider}` : ''}`
-                : `${otherName} paid you $${settlement.amount}${settlement.provider ? ` via ${settlement.provider}` : ''}`
+                ? `You paid ${payeeName} $${settlement.amount}${provider}`
+                : isToYou
+                ? `${payerName} paid you $${settlement.amount}${provider}`
+                : `${payerName} paid ${payeeName} $${settlement.amount}${provider}`
 
               return (
                 <li key={settlement.id} className="settlement-item completed">
