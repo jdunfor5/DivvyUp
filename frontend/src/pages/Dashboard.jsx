@@ -11,7 +11,7 @@ import BudgetCategories from '../components/BudgetCategories'
 import { getExpenses, getGroupBalances, getGroupMembers, createExpense, updateExpense, deleteExpense, getCurrentUser, getSettlements, createSettlement, confirmSettlement, cancelSettlement, removeMember, transferAdmin, leaveGroup, getCategories, getRecurringExpenses, createRecurringExpense, updateRecurringExpense, deactivateRecurringExpense } from '../api'
 import './Dashboard.css'
 
-function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
+function Dashboard({ groups = [], selectedGroupId, onSelectGroup, onRefreshGroups }) {
   const [expenses, setExpenses] = useState([])
   const [balances, setBalances] = useState([])
   const [members, setMembers] = useState([])
@@ -186,7 +186,7 @@ function Dashboard({ groups = [], selectedGroupId, onSelectGroup }) {
     try {
       await leaveGroup(selectedGroup.id)
       onSelectGroup(null)
-      loadGroupData(selectedGroup.id)
+      onRefreshGroups?.()
     } catch (err) {
       if (err.message.includes('Admin')) {
         alert('Failed to leave group: there needs to be an admin in the group. Transfer admin to someone else first.')

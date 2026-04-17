@@ -318,7 +318,7 @@ function App() {
         {activeView === 'friends' ? (
           <FriendsTab currentUser={currentUser} groups={groups} />
         ) : (
-          <Dashboard groups={groups} selectedGroupId={selectedGroupId} onSelectGroup={handleSelectGroup} />
+          <Dashboard groups={groups} selectedGroupId={selectedGroupId} onSelectGroup={handleSelectGroup} onRefreshGroups={loadGroups} />
         )}
       </main>
       {showProfile && (
